@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library - Books</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 24px; background: #f5f6f8; color: #1c1e21;
+  }
+  h1 { margin: 0 0 16px; font-size: 22px; }
+  .card {
+    background: #fff; border: 1px solid #dcdfe3; border-radius: 8px;
+    padding: 16px; margin-bottom: 20px;
+  }
+  form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  label { display: flex; flex-direction: column; font-size: 12px; gap: 4px; color: #555; }
+  input {
+    padding: 7px 9px; border: 1px solid #c6cbd1; border-radius: 5px;
+    font-size: 14px; background: #fff;
+  }
+  input:focus { outline: 2px solid #7aa7f7; border-color: #7aa7f7; }
+  #title { width: 220px; } #author { width: 160px; } #isbn { width: 150px; } #year { width: 80px; }
+  button {
+    padding: 8px 14px; border: 1px solid transparent; border-radius: 5px;
+    font-size: 14px; cursor: pointer; background: #e8eaed; color: #1c1e21;
+  }
+  button:hover { filter: brightness(0.95); }
+  #save { background: #2563eb; color: #fff; }
+  #clear { background: #e8eaed; }
+  .edit { background: #e8eaed; }
+  .del { background: #fee2e2; color: #b91c1c; border-color: #f3b0b0; }
+  #message { min-height: 20px; font-size: 14px; margin-bottom: 12px; }
+  #message.ok { color: #15803d; }
+  #message.error { color: #b91c1c; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #e6e8eb; font-size: 14px; }
+  th { background: #f0f2f5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
+  tbody tr:hover { background: #fafbfc; }
+  td.empty { color: #777; font-style: italic; text-align: center; padding: 24px; }
+  .actions { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<h1>Library &mdash; Books</h1>
+
+<div class="card">
+  <div id="message" role="status" aria-live="polite"></div>
+  <form id="book-form" autocomplete="off">
+    <input type="hidden" id="id">
+    <label>Title <input id="title" type="text" placeholder="Book title" required></label>
+    <label>Author <input id="author" type="text" placeholder="Author name" required></label>
+    <label>ISBN <input id="isbn" type="text" placeholder="Optional"></label>
+    <label>Year <input id="year" type="number" placeholder="1900" min="0" max="2100"></label>
+    <button type="submit" id="save">Save</button>
+    <button type="button" id="clear">Clear</button>
+  </form>
+</div>
+
+<div class="card">
+  <table id="books">
+    <thead>
+      <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Year</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var API = '/api/books';
+
+  var form = document.getElementById('book-form');
+  var msg  = document.getElementById('message');
+  var fId    = document.getElementById('id');
+  var fTitle = document.getElementById('title');
+  var fAuthor= document.getElementById('author');
+  var fIsbn  = document.getElementById('isbn');
+  var fYear  = document.getElementById('year');
+  var tbody  = document.querySelector('#books tbody');
+
+  var books = [];
+  var msgTimer = null;
+
+  // Escape text before it goes anywhere near innerHTML, so a title like
+  // "Tom & <b>Jerry</b>" is shown literally instead of being interpreted as markup.
+  function esc(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function showMessage(text, isError) {
+    msg.textContent = text;
+    msg.className = isError ? 'error' : 'ok';
+    if (msgTimer) clearTimeout(msgTimer);
+    msgTimer = setTimeout(function () { msg.textContent = ''; msg.className = ''; }, 6000);
+  }
+
+  function clearForm() {
+    fId.value = '';
+    fTitle.value = '';
+    fAuthor.value = '';
+    fIsbn.value = '';
+    fYear.value = '';
+  }
+
+  function render() {
+    tbody.innerHTML = '';
+    if (books.length === 0) {
+      tbody.innerHTML = '<tr><td class="empty" colspan="5">No books yet - add one above.</td></tr>';
+      return;
+    }
+    books.forEach(function (b, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(b.title) + '</td>' +
+        '<td>' + esc(b.author) + '</td>' +
+        '<td>' + esc(b.isbn) + '</td>' +
+        '<td>' + esc(b.publishYear) + '</td>' +
+        '<td class="actions">' +
+          '<button type="button" class="edit" data-index="' + i + '">Edit</button> ' +
+          '<button type="button" class="del" data-index="' + i + '">Delete</button>' +
+        '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function load() {
+    try {
+      var res = await fetch(API);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      books = await res.json();
+      render();
+    } catch (err) {
+      showMessage('Could not load books: ' + err.message, true);
+    }
+  }
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    var id = fId.value.trim();
+    var payload = {
+      title: fTitle.value.trim(),
+      author: fAuthor.value.trim(),
+      isbn: fIsbn.value.trim() === '' ? null : fIsbn.value.trim(),
+      publishYear: Number(fYear.value.trim() || 0)
+    };
+    if (!payload.title || !payload.author) {
+      showMessage('Title and author are required.', true);
+      return;
+    }
+    var url = id === '' ? API : API + '/' + id;
+    var method = id === '' ? 'POST' : 'PUT';
+    try {
+      var res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true);
+        return;
+      }
+      showMessage(data.message || 'Saved.');
+      clearForm();
+      await load();
+    } catch (err) {
+      showMessage('Request failed: ' + err.message, true);
+    }
+  });
+
+  document.getElementById('clear').addEventListener('click', function () {
+    clearForm();
+    showMessage('Form cleared.');
+  });
+
+  tbody.addEventListener('click', async function (event) {
+    var index = event.target.dataset ? event.target.dataset.index : undefined;
+    if (index === undefined) return;
+    var book = books[Number(index)];
+    if (!book) return;
+
+    if (event.target.classList.contains('edit')) {
+      fId.value = book.id;
+      fTitle.value = book.title || '';
+      fAuthor.value = book.author || '';
+      fIsbn.value = book.isbn || '';
+      fYear.value = book.publishYear || '';
+      showMessage('Editing #' + book.id + ' - change the fields and press Save.');
+      fTitle.focus();
+    } else if (event.target.classList.contains('del')) {
+      if (!window.confirm('Delete "' + (book.title || '') + '" (id ' + book.id + ')?')) return;
+      try {
+        var res = await fetch(API + '/' + book.id, { method: 'DELETE' });
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok) {
+          showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true);
+          return;
+        }
+        showMessage(data.message || 'Deleted.');
+        await load();
+      } catch (err) {
+        showMessage('Request failed: ' + err.message, true);
+      }
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
