@@ -20,7 +20,14 @@ public class Main {
         indexHtml = Files.readAllBytes(INDEX);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        AuthHandler authHandler = new AuthHandler();
+        server.createContext("/api/login", authHandler);
+        server.createContext("/api/logout", authHandler);
         server.createContext("/api/books", new BookHandler());
+        server.createContext("/api/members", new MemberHandler());
+        server.createContext("/api/issues", new IssueHandler());
+        server.createContext("/api/dashboard", new DashboardHandler());
+        server.createContext("/api/logs", new LogHandler());
         server.createContext("/", new IndexHandler());
         server.start();
         System.out.println("Server running on http://localhost:8080");

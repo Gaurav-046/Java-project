@@ -7,216 +7,531 @@
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
-  body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    margin: 0; padding: 24px; background: #f5f6f8; color: #1c1e21;
-  }
-  h1 { margin: 0 0 16px; font-size: 22px; }
-  .card {
-    background: #fff; border: 1px solid #dcdfe3; border-radius: 8px;
-    padding: 16px; margin-bottom: 20px;
-  }
-  form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f5f6f8; color: #1c1e21; }
+  h1 { margin: 0; font-size: 20px; }
+  h2 { margin: 0 0 12px; font-size: 16px; }
+
+  #topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #fff; border-bottom: 1px solid #dcdfe3; }
+  #who { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  #who-name { font-weight: 600; }
+  #who-role { color: #555; font-size: 12px; }
+
+  #tabs { display: flex; gap: 4px; padding: 12px 24px 0; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border: 1px solid #dcdfe3; border-bottom: none; border-radius: 6px 6px 0 0; background: #eceef1; font-size: 14px; cursor: pointer; }
+  .tab.active { background: #fff; font-weight: 600; }
+
+  main { padding: 16px 24px 24px; }
+  .card { background: #fff; border: 1px solid #dcdfe3; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+
   label { display: flex; flex-direction: column; font-size: 12px; gap: 4px; color: #555; }
-  input {
-    padding: 7px 9px; border: 1px solid #c6cbd1; border-radius: 5px;
-    font-size: 14px; background: #fff;
-  }
-  input:focus { outline: 2px solid #7aa7f7; border-color: #7aa7f7; }
-  #title { width: 220px; } #author { width: 160px; } #isbn { width: 150px; } #year { width: 80px; }
-  button {
-    padding: 8px 14px; border: 1px solid transparent; border-radius: 5px;
-    font-size: 14px; cursor: pointer; background: #e8eaed; color: #1c1e21;
-  }
+  input, select { padding: 7px 9px; border: 1px solid #c6cbd1; border-radius: 5px; font-size: 14px; background: #fff; }
+  input:focus, select:focus { outline: 2px solid #7aa7f7; border-color: #7aa7f7; }
+
+  button { padding: 8px 14px; border: 1px solid transparent; border-radius: 5px; font-size: 14px; cursor: pointer; background: #e8eaed; color: #1c1e21; }
   button:hover { filter: brightness(0.95); }
-  #save { background: #2563eb; color: #fff; }
-  #clear { background: #e8eaed; }
-  .edit { background: #e8eaed; }
-  .del { background: #fee2e2; color: #b91c1c; border-color: #f3b0b0; }
+  .primary { background: #2563eb; color: #fff; }
+  .danger { background: #fee2e2; color: #b91c1c; border-color: #f3b0b0; }
+  .ghost { background: #e8eaed; }
+  .small { padding: 5px 9px; font-size: 13px; }
+
   #message { min-height: 20px; font-size: 14px; margin-bottom: 12px; }
   #message.ok { color: #15803d; }
   #message.error { color: #b91c1c; font-weight: 600; }
+
   table { width: 100%; border-collapse: collapse; background: #fff; }
   th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #e6e8eb; font-size: 14px; }
   th { background: #f0f2f5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
   tbody tr:hover { background: #fafbfc; }
   td.empty { color: #777; font-style: italic; text-align: center; padding: 24px; }
   .actions { white-space: nowrap; }
+  tr.overdue { background: #fef2f2; }
+  tr.overdue td { color: #b91c1c; }
+  tr.overdue:hover { background: #fee2e2; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef2ff; color: #3730a3; }
+  .pill.DELETE_BOOK, .pill.FAILED_LOGIN { background: #fee2e2; color: #b91c1c; }
+  .pill.LOGIN, .pill.LOGOUT, .pill.ISSUE_BOOK, .pill.RETURN_BOOK { background: #ecfdf5; color: #047857; }
+  .cond-Available { color: #15803d; font-weight: 600; }
+  .cond-Damaged { color: #b45309; font-weight: 600; }
+  .cond-Lost { color: #b91c1c; font-weight: 600; }
+  .status-open { color: #b45309; font-weight: 600; }
+  .status-returned { color: #15803d; font-weight: 600; }
+
+  /* dashboard widgets */
+  .widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .widget { background: #fff; border: 1px solid #dcdfe3; border-radius: 8px; padding: 16px; }
+  .widget .num { font-size: 30px; font-weight: 700; line-height: 1.1; }
+  .widget .lbl { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .widget.warn .num { color: #b91c1c; }
+  .widget.good .num { color: #15803d; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+
+  /* login overlay */
+  #login-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(28,30,33,0.45); padding: 16px; z-index: 10; }
+  #login-overlay[hidden] { display: none; }
+  .login-card { background: #fff; border-radius: 10px; padding: 24px; width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
+  .login-card h2 { margin: 0 0 16px; font-size: 18px; }
+  .login-card form { display: flex; flex-direction: column; gap: 10px; }
+  .login-card label { width: 100%; }
+  .login-card input { width: 100%; }
+  #login-btn { background: #2563eb; color: #fff; }
+  #login-error { min-height: 18px; color: #b91c1c; font-size: 13px; }
+  .hint { color: #777; font-size: 12px; margin: 6px 0 0; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<h1>Library &mdash; Books</h1>
+<header id="topbar">
+  <h1>Library &mdash; Books</h1>
+  <div id="who" hidden>
+    <span id="who-name"></span>
+    <span id="who-role"></span>
+    <button type="button" id="logout" class="danger">Logout</button>
+  </div>
+</header>
 
-<div class="card">
-  <div id="message" role="status" aria-live="polite"></div>
-  <form id="book-form" autocomplete="off">
-    <input type="hidden" id="id">
-    <label>Title <input id="title" type="text" placeholder="Book title" required></label>
-    <label>Author <input id="author" type="text" placeholder="Author name" required></label>
-    <label>ISBN <input id="isbn" type="text" placeholder="Optional"></label>
-    <label>Year <input id="year" type="number" placeholder="1900" min="0" max="2100"></label>
-    <button type="submit" id="save">Save</button>
-    <button type="button" id="clear">Clear</button>
-  </form>
+<div id="tabs">
+  <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
+  <button type="button" class="tab" data-tab="books">Books</button>
+  <button type="button" class="tab" data-tab="members">Members</button>
+  <button type="button" class="tab" data-tab="circulation">Circulation</button>
+  <button type="button" class="tab" data-tab="logs">Activity Logs</button>
 </div>
 
-<div class="card">
-  <table id="books">
-    <thead>
-      <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Year</th><th>Actions</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<main>
+  <div id="message" role="status" aria-live="polite"></div>
+
+  <!-- ============================== DASHBOARD ============================= -->
+  <section id="panel-dashboard">
+    <div class="widgets">
+      <div class="widget"><div class="num" id="w-total">–</div><div class="lbl">Total Books</div></div>
+      <div class="widget"><div class="num" id="w-issued">–</div><div class="lbl">Currently Issued</div></div>
+      <div class="widget warn"><div class="num" id="w-overdue">–</div><div class="lbl">Overdue</div></div>
+      <div class="widget good"><div class="num" id="w-members">–</div><div class="lbl">Active Members</div></div>
+      <div class="widget"><div class="num" id="w-available">–</div><div class="lbl">Available Now</div></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h2>Overdue transactions</h2>
+      <table id="dash-overdue">
+        <thead><tr><th>Member</th><th>Book</th><th>Due</th><th>Days late</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================= BOOKS ============================== -->
+  <section id="panel-books" hidden>
+    <div class="card">
+      <div class="toolbar">
+        <label>Title <input id="s-title" type="text" placeholder="search title"></label>
+        <label>Author <input id="s-author" type="text" placeholder="search author"></label>
+        <label>Genre <input id="s-genre" type="text" placeholder="search genre"></label>
+        <label>ISBN <input id="s-isbn" type="text" placeholder="search ISBN"></label>
+        <button type="button" id="btn-search" class="primary">Search</button>
+        <button type="button" id="btn-search-clear" class="ghost">Clear</button>
+        <span style="flex:1"></span>
+        <button type="button" id="btn-export" class="ghost">Export CSV</button>
+        <label class="ghost" style="cursor:pointer">Import CSV<input id="csv-file" type="file" accept=".csv,text/csv" class="hidden"></label>
+      </div>
+
+      <form id="book-form" class="row" autocomplete="off">
+        <input type="hidden" id="b-id">
+        <label>Title <input id="b-title" type="text" required></label>
+        <label>Author <input id="b-author" type="text" required></label>
+        <label>ISBN <input id="b-isbn" type="text" placeholder="optional"></label>
+        <label>Year <input id="b-year" type="number" min="0" max="2100"></label>
+        <label>Genre <input id="b-genre" type="text" placeholder="optional"></label>
+        <label>Copies <input id="b-copies" type="number" min="1" value="1"></label>
+        <button type="submit" id="b-save" class="primary">Save</button>
+        <button type="button" id="b-clear" class="ghost">Clear</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <table id="books">
+        <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Year</th><th>Genre</th><th>Condition</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =============================== MEMBERS ============================== -->
+  <section id="panel-members" hidden>
+    <div class="card">
+      <form id="member-form" class="row" autocomplete="off">
+        <input type="hidden" id="m-id">
+        <label>Name <input id="m-name" type="text" required></label>
+        <label>Email <input id="m-email" type="email" placeholder="optional"></label>
+        <label>Phone <input id="m-phone" type="text" placeholder="optional"></label>
+        <button type="submit" id="m-save" class="primary">Save</button>
+        <button type="button" id="m-clear" class="ghost">Clear</button>
+      </form>
+    </div>
+    <div class="card">
+      <table id="members">
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================= CIRCULATION ============================ -->
+  <section id="panel-circulation" hidden>
+    <div class="card">
+      <h2>Issue a book</h2>
+      <form id="issue-form" class="row" autocomplete="off">
+        <label>Book <select id="i-book"></select></label>
+        <label>Member <select id="i-member"></select></label>
+        <button type="submit" class="primary">Issue</button>
+      </form>
+    </div>
+    <div class="card">
+      <table id="issues">
+        <thead><tr><th>Member</th><th>Book</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th><th>Fine</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================ ACTIVITY LOGS =========================== -->
+  <section id="panel-logs" hidden>
+    <div class="card">
+      <table id="logs">
+        <thead><tr><th>Time</th><th>Librarian</th><th>Action</th><th>Details</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- ================================ LOGIN ================================ -->
+<div id="login-overlay">
+  <div class="login-card">
+    <h2>Librarian sign in</h2>
+    <form id="login-form" autocomplete="off">
+      <label>Username <input id="login-username" type="text" placeholder="admin" required></label>
+      <label>Password <input id="login-password" type="password" placeholder="Password" required></label>
+      <button type="submit" id="login-btn">Sign in</button>
+      <div id="login-error" role="alert"></div>
+    </form>
+    <p class="hint">Default account: <code>admin</code> / <code>admin123</code></p>
+  </div>
 </div>
 
 <script>
 (function () {
   'use strict';
-  var API = '/api/books';
+  var state = { token: null, librarian: null };
+  var activeTab = 'dashboard';
 
-  var form = document.getElementById('book-form');
-  var msg  = document.getElementById('message');
-  var fId    = document.getElementById('id');
-  var fTitle = document.getElementById('title');
-  var fAuthor= document.getElementById('author');
-  var fIsbn  = document.getElementById('isbn');
-  var fYear  = document.getElementById('year');
-  var tbody  = document.querySelector('#books tbody');
+  // ---------------------------------------------------------- session -------
+  function persist() { sessionStorage.setItem('lib.token', state.token); sessionStorage.setItem('lib.librarian', JSON.stringify(state.librarian)); }
+  function restore() { var t = sessionStorage.getItem('lib.token'); var l = sessionStorage.getItem('lib.librarian'); if (t && l) { state.token = t; state.librarian = JSON.parse(l); } }
+  function clearSession() { state.token = null; state.librarian = null; sessionStorage.removeItem('lib.token'); sessionStorage.removeItem('lib.librarian'); }
 
-  var books = [];
-  var msgTimer = null;
+  function esc(v) { if (v === null || v === undefined) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-  // Escape text before it goes anywhere near innerHTML, so a title like
-  // "Tom & <b>Jerry</b>" is shown literally instead of being interpreted as markup.
-  function esc(value) {
-    if (value === null || value === undefined) return '';
-    return String(value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  async function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers);
+    if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
+    var res = await fetch(path, opts);
+    if (res.status === 401) { clearSession(); showLogin('Your session has expired. Please sign in again.'); throw new Error('Not authenticated'); }
+    return res;
+  }
+  async function json(res) { return res.json().catch(function () { return {}; }); }
+
+  var msgEl = document.getElementById('message'); var msgTimer = null;
+  function showMessage(text, isError) { msgEl.textContent = text; msgEl.className = isError ? 'error' : 'ok'; if (msgTimer) clearTimeout(msgTimer); msgTimer = setTimeout(function () { msgEl.textContent = ''; msgEl.className = ''; }, 6000); }
+
+  // ------------------------------------------------------------- login -------
+  var overlay = document.getElementById('login-overlay');
+  var loginForm = document.getElementById('login-form');
+  var loginError = document.getElementById('login-error');
+  function showLogin(m) { loginError.textContent = m || ''; overlay.hidden = false; }
+  function hideLogin() { loginError.textContent = ''; overlay.hidden = true; }
+
+  loginForm.addEventListener('submit', async function (e) {
+    e.preventDefault(); loginError.textContent = '';
+    var u = document.getElementById('login-username').value.trim();
+    var p = document.getElementById('login-password').value;
+    try {
+      var res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) });
+      var data = await json(res);
+      if (!res.ok) { loginError.textContent = data.error || ('HTTP ' + res.status); return; }
+      state.token = data.token; state.librarian = data.librarian; persist(); loginForm.reset(); hideLogin();
+      afterLogin();
+    } catch (err) { loginError.textContent = 'Sign-in failed: ' + err.message; }
+  });
+
+  function renderWho() {
+    var who = document.getElementById('who');
+    if (state.librarian) { who.hidden = false; document.getElementById('who-name').textContent = state.librarian.fullName || state.librarian.username; document.getElementById('who-role').textContent = state.librarian.role ? '(' + state.librarian.role + ')' : ''; }
+    else who.hidden = true;
+  }
+  document.getElementById('logout').addEventListener('click', async function () {
+    try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
+    clearSession(); renderWho(); showLogin('Signed out.');
+  });
+
+  // --------------------------------------------------------------- tabs ------
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = { dashboard: 'panel-dashboard', books: 'panel-books', members: 'panel-members', circulation: 'panel-circulation', logs: 'panel-logs' };
+  tabs.forEach(function (b) { b.addEventListener('click', function () { activateTab(b.dataset.tab); }); });
+  function activateTab(name) {
+    activeTab = name;
+    tabs.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+    Object.keys(panels).forEach(function (k) { document.getElementById(panels[k]).hidden = (k !== name); });
+    if (name === 'dashboard') loadDashboard();
+    else if (name === 'books') loadBooks();
+    else if (name === 'members') loadMembers();
+    else if (name === 'circulation') loadCirculation();
+    else if (name === 'logs') loadLogs();
   }
 
-  function showMessage(text, isError) {
-    msg.textContent = text;
-    msg.className = isError ? 'error' : 'ok';
-    if (msgTimer) clearTimeout(msgTimer);
-    msgTimer = setTimeout(function () { msg.textContent = ''; msg.className = ''; }, 6000);
-  }
+  // ----------------------------------------------------------- dashboard -----
+  var todayISO = new Date().toISOString().slice(0, 10);
+  function daysLate(due) { if (!due) return 0; var d = Math.floor((Date.parse(todayISO) - Date.parse(due)) / 86400000); return d > 0 ? d : 0; }
 
-  function clearForm() {
-    fId.value = '';
-    fTitle.value = '';
-    fAuthor.value = '';
-    fIsbn.value = '';
-    fYear.value = '';
-  }
+  async function loadDashboard() {
+    var s = await json(await api('/api/dashboard'));
+    if (s.error) { showMessage(s.error, true); return; }
+    document.getElementById('w-total').textContent = s.totalBooks;
+    document.getElementById('w-issued').textContent = s.issuedNow;
+    document.getElementById('w-overdue').textContent = s.overdue;
+    document.getElementById('w-members').textContent = s.activeMembers;
+    document.getElementById('w-available').textContent = s.availableNow;
 
-  function render() {
-    tbody.innerHTML = '';
-    if (books.length === 0) {
-      tbody.innerHTML = '<tr><td class="empty" colspan="5">No books yet - add one above.</td></tr>';
-      return;
-    }
-    books.forEach(function (b, i) {
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' + esc(b.title) + '</td>' +
-        '<td>' + esc(b.author) + '</td>' +
-        '<td>' + esc(b.isbn) + '</td>' +
-        '<td>' + esc(b.publishYear) + '</td>' +
-        '<td class="actions">' +
-          '<button type="button" class="edit" data-index="' + i + '">Edit</button> ' +
-          '<button type="button" class="del" data-index="' + i + '">Delete</button>' +
-        '</td>';
-      tbody.appendChild(tr);
+    var issues = await json(await api('/api/issues'));
+    var tb = document.querySelector('#dash-overdue tbody'); tb.innerHTML = '';
+    var overdue = (issues || []).filter(function (r) { return r.status === 'ISSUED' && daysLate(r.dueDate) > 0; });
+    if (overdue.length === 0) { tb.innerHTML = '<tr><td class="empty" colspan="4">No overdue transactions.</td></tr>'; return; }
+    overdue.forEach(function (r) {
+      var tr = document.createElement('tr'); tr.className = 'overdue';
+      tr.innerHTML = '<td>' + esc(r.memberName) + '</td><td>' + esc(r.bookTitle) + '</td><td>' + esc(r.dueDate) + '</td><td>' + daysLate(r.dueDate) + '</td>';
+      tb.appendChild(tr);
     });
   }
 
-  async function load() {
+  // --------------------------------------------------------------- books -----
+  var bForm = document.getElementById('book-form');
+  var booksTbody = document.querySelector('#books tbody');
+  var books = [];
+  function field(id) { return document.getElementById(id); }
+
+  async function loadBooks() {
+    var q = [];
+    [['s-title','title'],['s-author','author'],['s-genre','genre'],['s-isbn','isbn']].forEach(function (pair) {
+      var v = field(pair[0]).value.trim(); if (v) q.push(pair[1] + '=' + encodeURIComponent(v));
+    });
+    books = await json(await api('/api/books' + (q.length ? '?' + q.join('&') : '')));
+    renderBooks();
+  }
+  function renderBooks() {
+    booksTbody.innerHTML = '';
+    if (!books || books.length === 0) { booksTbody.innerHTML = '<tr><td class="empty" colspan="8">No books match.</td></tr>'; return; }
+    books.forEach(function (b, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(b.title) + '</td><td>' + esc(b.author) + '</td><td>' + esc(b.isbn) + '</td>' +
+        '<td>' + esc(b.publishYear) + '</td><td>' + esc(b.genre) + '</td>' +
+        '<td><span class="cond-' + esc(b.condition) + '">' + esc(b.condition) + '</span></td>' +
+        '<td>' + b.availableCopies + '/' + b.totalCopies + '</td>' +
+        '<td class="actions">' +
+          '<button type="button" class="ghost small edit" data-index="' + i + '">Edit</button> ' +
+          '<button type="button" class="danger small del" data-index="' + i + '">Delete</button>' +
+        '</td>';
+      // condition selector
+      var td = tr.querySelector('td.actions');
+      var sel = document.createElement('select');
+      sel.className = 'cond small'; sel.dataset.id = b.id;
+      ['Available','Damaged','Lost'].forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; if (c === b.condition) o.selected = true; sel.appendChild(o); });
+      var wrap = document.createElement('div'); wrap.style.marginTop = '4px'; wrap.appendChild(sel); td.appendChild(wrap);
+      booksTbody.appendChild(tr);
+    });
+  }
+  booksTbody.addEventListener('change', async function (e) {
+    if (!e.target.classList.contains('cond')) return;
+    var id = e.target.dataset.id; var cond = e.target.value;
     try {
-      var res = await fetch(API);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      books = await res.json();
-      render();
-    } catch (err) {
-      showMessage('Could not load books: ' + err.message, true);
+      var res = await api('/api/books/' + id + '/condition', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ condition: cond }) });
+      var data = await json(res);
+      if (!res.ok) { showMessage(data.error || 'Failed', true); await loadBooks(); return; }
+      showMessage('Condition set to ' + cond + '.'); await loadBooks();
+    } catch (err) { showMessage(err.message, true); }
+  });
+  booksTbody.addEventListener('click', async function (e) {
+    var idx = e.target.dataset ? e.target.dataset.index : undefined; if (idx === undefined) return;
+    var b = books[Number(idx)]; if (!b) return;
+    if (e.target.classList.contains('edit')) {
+      field('b-id').value = b.id; field('b-title').value = b.title || ''; field('b-author').value = b.author || '';
+      field('b-isbn').value = b.isbn || ''; field('b-year').value = b.publishYear || ''; field('b-genre').value = b.genre || ''; field('b-copies').value = b.totalCopies || 1;
+      showMessage('Editing #' + b.id + ' - update the fields and press Save.'); field('b-title').focus();
+    } else if (e.target.classList.contains('del')) {
+      if (!window.confirm('Delete "' + (b.title || '') + '" (id ' + b.id + ')?')) return;
+      var res = await api('/api/books/' + b.id, { method: 'DELETE' }); var data = await json(res);
+      if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
+      showMessage(data.message || 'Deleted.'); await loadBooks();
     }
+  });
+  bForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var id = field('b-id').value.trim();
+    var payload = { title: field('b-title').value.trim(), author: field('b-author').value.trim(),
+      isbn: field('b-isbn').value.trim() === '' ? null : field('b-isbn').value.trim(),
+      publishYear: Number(field('b-year').value.trim() || 0), genre: field('b-genre').value.trim() || null,
+      totalCopies: Number(field('b-copies').value || 1) };
+    var url = id === '' ? '/api/books' : '/api/books/' + id;
+    var method = id === '' ? 'POST' : 'PUT';
+    var res = await api(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    var data = await json(res);
+    if (!res.ok) { showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true); return; }
+    showMessage(data.message || 'Saved.'); clearBookForm(); await loadBooks();
+  });
+  function clearBookForm() { field('b-id').value = ''; bForm.reset(); field('b-copies').value = 1; }
+  document.getElementById('b-clear').addEventListener('click', clearBookForm);
+  document.getElementById('btn-search').addEventListener('click', loadBooks);
+  document.getElementById('btn-search-clear').addEventListener('click', function () { ['s-title','s-author','s-genre','s-isbn'].forEach(function (id) { field(id).value = ''; }); loadBooks(); });
+  ['s-title','s-author','s-genre','s-isbn'].forEach(function (id) { field(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); loadBooks(); } }); });
+
+  document.getElementById('btn-export').addEventListener('click', async function () {
+    try {
+      var res = await api('/api/books/export');
+      if (!res.ok) { showMessage('Export failed', true); return; }
+      var blob = await res.blob(); var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = 'books.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      showMessage('Exported books.csv');
+    } catch (err) { showMessage(err.message, true); }
+  });
+  document.getElementById('csv-file').addEventListener('change', async function (e) {
+    var file = e.target.files[0]; if (!file) return;
+    var text = await file.text();
+    try {
+      var res = await api('/api/books/import', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: text });
+      var data = await json(res);
+      if (!res.ok) { showMessage(data.error || 'Import failed', true); return; }
+      showMessage('Import: ' + data.added + ' added, ' + data.skipped + ' skipped, ' + data.errors + ' errors.');
+      await loadBooks();
+    } catch (err) { showMessage(err.message, true); }
+    e.target.value = '';
+  });
+
+  // ------------------------------------------------------------ members ------
+  var mForm = document.getElementById('member-form');
+  var membersTbody = document.querySelector('#members tbody');
+  var members = [];
+  async function loadMembers() { members = await json(await api('/api/members')); renderMembers(); }
+  function renderMembers() {
+    membersTbody.innerHTML = '';
+    if (!members || members.length === 0) { membersTbody.innerHTML = '<tr><td class="empty" colspan="5">No members yet.</td></tr>'; return; }
+    members.forEach(function (m, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + esc(m.name) + '</td><td>' + esc(m.email) + '</td><td>' + esc(m.phone) + '</td>' +
+        '<td>' + (m.activeStatus ? '<span class="status-returned">Active</span>' : '<span class="status-open">Inactive</span>') + '</td>' +
+        '<td class="actions"><button type="button" class="ghost small m-edit" data-index="' + i + '">Edit</button> ' +
+        '<button type="button" class="danger small m-del" data-index="' + i + '">' + (m.activeStatus ? 'Deactivate' : 'Delete') + '</button></td>';
+      membersTbody.appendChild(tr);
+    });
+  }
+  membersTbody.addEventListener('click', async function (e) {
+    var idx = e.target.dataset ? e.target.dataset.index : undefined; if (idx === undefined) return;
+    var m = members[Number(idx)]; if (!m) return;
+    if (e.target.classList.contains('m-edit')) {
+      field('m-id').value = m.id; field('m-name').value = m.name || ''; field('m-email').value = m.email || ''; field('m-phone').value = m.phone || '';
+      showMessage('Editing #' + m.id); field('m-name').focus();
+    } else if (e.target.classList.contains('m-del')) {
+      if (!window.confirm((m.activeStatus ? 'Deactivate' : 'Delete') + ' "' + m.name + '"?')) return;
+      var res = await api('/api/members/' + m.id, { method: 'DELETE' }); var data = await json(res);
+      if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
+      showMessage(data.message || 'Done.'); if (field('m-id').value === String(m.id)) clearMemberForm(); await loadMembers();
+    }
+  });
+  mForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var id = field('m-id').value.trim();
+    var payload = { name: field('m-name').value.trim(), email: field('m-email').value.trim() || null, phone: field('m-phone').value.trim() || null, activeStatus: true };
+    var url = id === '' ? '/api/members' : '/api/members/' + id;
+    var method = id === '' ? 'POST' : 'PUT';
+    var res = await api(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    var data = await json(res);
+    if (!res.ok) { showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true); return; }
+    showMessage(data.message || 'Saved.'); clearMemberForm(); await loadMembers();
+  });
+  function clearMemberForm() { field('m-id').value = ''; mForm.reset(); }
+  document.getElementById('m-clear').addEventListener('click', clearMemberForm);
+
+  // -------------------------------------------------------- circulation ------
+  var issuesTbody = document.querySelector('#issues tbody');
+  var issues = [];
+  async function loadCirculation() {
+    issues = await json(await api('/api/issues'));
+    renderIssues();
+    await fillSelects();
+  }
+  function renderIssues() {
+    issuesTbody.innerHTML = '';
+    if (!issues || issues.length === 0) { issuesTbody.innerHTML = '<tr><td class="empty" colspan="8">No circulation records.</td></tr>'; return; }
+    issues.forEach(function (r, i) {
+      var late = r.status === 'ISSUED' && daysLate(r.dueDate) > 0;
+      var tr = document.createElement('tr'); if (late) tr.className = 'overdue';
+      tr.innerHTML = '<td>' + esc(r.memberName) + '</td><td>' + esc(r.bookTitle) + '</td>' +
+        '<td>' + esc(r.issueDate) + '</td><td>' + esc(r.dueDate) + '</td><td>' + esc(r.returnDate || '–') + '</td>' +
+        '<td class="' + (r.status === 'ISSUED' ? 'status-open' : 'status-returned') + '">' + esc(r.status) + (late ? ' (OVERDUE)' : '') + '</td>' +
+        '<td>' + (r.fineAmount > 0 ? '$' + Number(r.fineAmount).toFixed(2) : '–') + '</td>' +
+        '<td class="actions">' + (r.status === 'ISSUED' ? '<button type="button" class="primary small ret" data-index="' + i + '">Return</button>' : '') + '</td>';
+      issuesTbody.appendChild(tr);
+    });
+  }
+  issuesTbody.addEventListener('click', async function (e) {
+    if (!e.target.classList.contains('ret')) return;
+    var idx = e.target.dataset.index; var r = issues[Number(idx)]; if (!r) return;
+    var res = await api('/api/issues/' + r.id + '/return', { method: 'POST' }); var data = await json(res);
+    if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
+    var fine = data.record && data.record.fineAmount > 0 ? ' Fine $' + Number(data.record.fineAmount).toFixed(2) : '';
+    showMessage('Book returned.' + fine); await loadCirculation();
+  });
+  async function fillSelects() {
+    var bk = document.getElementById('i-book'); var mb = document.getElementById('i-member');
+    var booksAvail = await json(await api('/api/books'));
+    var mem = await json(await api('/api/members'));
+    bk.innerHTML = ''; mb.innerHTML = '';
+    (booksAvail || []).filter(function (b) { return b.availableCopies > 0; }).forEach(function (b) { var o = document.createElement('option'); o.value = b.id; o.textContent = b.title + ' (' + b.availableCopies + ' left)'; bk.appendChild(o); });
+    if (!bk.options.length) bk.innerHTML = '<option value="">No copies available</option>';
+    (mem || []).filter(function (m) { return m.activeStatus; }).forEach(function (m) { var o = document.createElement('option'); o.value = m.id; o.textContent = m.name; mb.appendChild(o); });
+    if (!mb.options.length) mb.innerHTML = '<option value="">No active members</option>';
+  }
+  document.getElementById('issue-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var bookId = Number(document.getElementById('i-book').value);
+    var memberId = Number(document.getElementById('i-member').value);
+    if (!bookId || !memberId) { showMessage('Select both a book and a member.', true); return; }
+    var res = await api('/api/issues', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId: bookId, memberId: memberId }) });
+    var data = await json(res);
+    if (!res.ok) { showMessage(data.error || 'Issue failed', true); return; }
+    showMessage('Book issued, due ' + (data.record ? data.record.dueDate : '') + '.'); await loadCirculation();
+  });
+
+  // ----------------------------------------------------------- logs ----------
+  var logsTbody = document.querySelector('#logs tbody');
+  async function loadLogs() {
+    var logs = await json(await api('/api/logs'));
+    logsTbody.innerHTML = '';
+    if (!logs || logs.length === 0) { logsTbody.innerHTML = '<tr><td class="empty" colspan="4">No activity yet.</td></tr>'; return; }
+    logs.forEach(function (l) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + esc(l.timestamp) + '</td><td>' + esc(l.librarianName) + '</td>' +
+        '<td><span class="pill ' + esc(l.action) + '">' + esc(l.action) + '</span></td><td>' + esc(l.details) + '</td>';
+      logsTbody.appendChild(tr);
+    });
   }
 
-  form.addEventListener('submit', async function (event) {
-    event.preventDefault();
-    var id = fId.value.trim();
-    var payload = {
-      title: fTitle.value.trim(),
-      author: fAuthor.value.trim(),
-      isbn: fIsbn.value.trim() === '' ? null : fIsbn.value.trim(),
-      publishYear: Number(fYear.value.trim() || 0)
-    };
-    if (!payload.title || !payload.author) {
-      showMessage('Title and author are required.', true);
-      return;
-    }
-    var url = id === '' ? API : API + '/' + id;
-    var method = id === '' ? 'POST' : 'PUT';
-    try {
-      var res = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      var data = await res.json().catch(function () { return {}; });
-      if (!res.ok) {
-        showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true);
-        return;
-      }
-      showMessage(data.message || 'Saved.');
-      clearForm();
-      await load();
-    } catch (err) {
-      showMessage('Request failed: ' + err.message, true);
-    }
-  });
-
-  document.getElementById('clear').addEventListener('click', function () {
-    clearForm();
-    showMessage('Form cleared.');
-  });
-
-  tbody.addEventListener('click', async function (event) {
-    var index = event.target.dataset ? event.target.dataset.index : undefined;
-    if (index === undefined) return;
-    var book = books[Number(index)];
-    if (!book) return;
-
-    if (event.target.classList.contains('edit')) {
-      fId.value = book.id;
-      fTitle.value = book.title || '';
-      fAuthor.value = book.author || '';
-      fIsbn.value = book.isbn || '';
-      fYear.value = book.publishYear || '';
-      showMessage('Editing #' + book.id + ' - change the fields and press Save.');
-      fTitle.focus();
-    } else if (event.target.classList.contains('del')) {
-      if (!window.confirm('Delete "' + (book.title || '') + '" (id ' + book.id + ')?')) return;
-      try {
-        var res = await fetch(API + '/' + book.id, { method: 'DELETE' });
-        var data = await res.json().catch(function () { return {}; });
-        if (!res.ok) {
-          showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true);
-          return;
-        }
-        showMessage(data.message || 'Deleted.');
-        await load();
-      } catch (err) {
-        showMessage('Request failed: ' + err.message, true);
-      }
-    }
-  });
-
-  load();
+  // ------------------------------------------------------------- boot --------
+  async function afterLogin() { renderWho(); activateTab('dashboard'); }
+  restore();
+  if (state.token) { hideLogin(); afterLogin(); } else { renderWho(); showLogin(); }
 })();
 </script>
 </body>
