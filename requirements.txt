@@ -1,0 +1,34 @@
+# Library System — requirements
+# This is a Java/Maven project. There is no Python environment, so this file is an
+# inventory of pinned versions plus the tooling needed to build and run. For the
+# authoritative dependency declarations and versions, see pom.xml.
+
+# --- Tooling (must be installed locally, not pulled as a dependency) ---
+# JDK 17 or newer            : java -version
+# Apache Maven 3.6+         : mvn -v
+# MySQL 8, running on       : localhost:3306
+
+# --- Maven dependencies (pinned in pom.xml) ---
+# com.mysql:mysql-connector-j   8.4.0   MySQL 8 JDBC driver (runtime)
+# com.google.code.gson:gson     2.11.0  JSON serialization (runtime)
+# org.junit.jupiter:junit-jupiter 5.10.2  JUnit 5 test runner (test scope)
+
+# --- Build ---
+# mvn clean package
+#   -> target/library-system-1.0.jar (fat jar: Connector/J + Gson bundled)
+#   -> Main-Class: com.library.Main
+
+# --- Run (from the project root) ---
+# java -jar target/library-system-1.0.jar
+#   or
+# mvn compile exec:java -Dexec.mainClass=com.library.Main
+# Opens http://localhost:8080
+
+# --- Database ---
+# schema.sql (project root) creates library_db and the books table.
+# mysql -u root -p < schema.sql   (idempotent)
+
+# --- Credentials (optional env vars; these are the defaults when unset) ---
+# DB_URL=jdbc:mysql://localhost:3306/library_db
+# DB_USER=root
+# DB_PASSWORD=your_password
