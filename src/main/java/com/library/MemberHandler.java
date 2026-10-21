@@ -23,6 +23,9 @@ public class MemberHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         SessionManager.Session session = Auth.session(ex);
         if (session == null) {
             send(ex, 401, error("Not authenticated"));
@@ -44,7 +47,7 @@ public class MemberHandler implements HttpHandler {
         } catch (JsonSyntaxException | NumberFormatException e) {
             send(ex, 400, error("Bad request"));
         } catch (SQLException e) {
-            send(ex, 500, error(e.getMessage()));
+            send(ex, DbErrors.status(e), error(e.getMessage()));
         }
     }
 
@@ -53,7 +56,7 @@ public class MemberHandler implements HttpHandler {
         switch (method) {
             case "GET" -> send(ex, 200, dao.findAll());
             case "POST" -> {
-                Member member = read(ex, Member.class);
+                Member member = Json.read(ex, Member.class);
                 String problem = validationError(member);
                 if (problem != null) {
                     send(ex, 400, error(problem));
@@ -81,7 +84,7 @@ public class MemberHandler implements HttpHandler {
                 }
             }
             case "PUT" -> {
-                Member body = read(ex, Member.class);
+                Member body = Json.read(ex, Member.class);
                 Member updated = new Member(id, body.name(), body.email(), body.phone(), body.activeStatus());
                 String problem = validationError(updated);
                 if (problem != null) {
@@ -151,18 +154,6 @@ public class MemberHandler implements HttpHandler {
             throw new NumberFormatException(rest);
         }
         return Integer.parseInt(rest.substring(1));
-    }
-
-    private <T> T read(HttpExchange ex, Class<T> type) throws IOException {
-        byte[] bytes = ex.getRequestBody().readAllBytes();
-        if (bytes.length == 0) {
-            throw new JsonSyntaxException("Empty request body");
-        }
-        T value = GSON.fromJson(new String(bytes, StandardCharsets.UTF_8), type);
-        if (value == null) {
-            throw new JsonSyntaxException("Null request body");
-        }
-        return value;
     }
 
     private void send(HttpExchange ex, int status, Object body) throws IOException {

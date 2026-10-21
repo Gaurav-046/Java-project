@@ -19,7 +19,7 @@ public class BookDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, b, false);
-            ps.executeUpdate();
+            execute(ps, "book");
         }
     }
 
@@ -48,7 +48,7 @@ public class BookDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, b, true);
-            ps.executeUpdate();
+            execute(ps, "book");
         }
     }
 
@@ -60,7 +60,7 @@ public class BookDAO {
             ps.setString(1, condition);
             ps.setInt(2, availableCopies);
             ps.setInt(3, id);
-            ps.executeUpdate();
+            execute(ps, "book");
         }
     }
 
@@ -69,7 +69,7 @@ public class BookDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            ps.executeUpdate();
+            execute(ps, "book");
         }
     }
 
@@ -136,6 +136,15 @@ public class BookDAO {
             }
         }
         return books;
+    }
+
+    /** Runs a write statement, translating PK/unique/FK constraint failures into readable errors. */
+    private static void execute(PreparedStatement ps, String entity) throws SQLException {
+        try {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw DbErrors.wrap(e, entity);
+        }
     }
 
     private static void bind(PreparedStatement ps, Book b, boolean withId) throws SQLException {

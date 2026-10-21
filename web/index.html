@@ -1334,6 +1334,7 @@ noscript .ns {
   async function api(path, opts) {
     opts = opts || {};
     opts.headers = Object.assign({}, opts.headers);
+    if (opts.body && !opts.headers['Content-Type']) opts.headers['Content-Type'] = 'application/json';
     if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
     var res = await fetch(path, opts);
     if (res.status === 401) {
@@ -1345,6 +1346,13 @@ noscript .ns {
     return res;
   }
   async function json(res) { return res.json().catch(function () { return {}; }); }
+
+  /** Parses a JSON reply, surfacing non-2xx statuses as a readable error for reportError. */
+  async function jsonOrThrow(res, what) {
+    var data = await json(res);
+    if (!res.ok) throw new Error(data.error || (what || 'Request') + ' failed (HTTP ' + res.status + ')');
+    return data;
+  }
 
   /** Reports unexpected loader errors — but stays quiet after a session drop. */
   function reportError(err) {
@@ -1674,7 +1682,7 @@ noscript .ns {
   async function loadDashboard() {
     skeletonRows(document.querySelector('#dash-overdue tbody'), 4, 3);
     try {
-      var s = await json(await api('/api/dashboard'));
+      var s = await jsonOrThrow(await api('/api/dashboard'), 'Dashboard');
       if (s.error) { toast(s.error, 'error'); return; }
       field('w-total').textContent = s.totalBooks;
       field('w-issued').textContent = s.issuedNow;
@@ -1682,7 +1690,7 @@ noscript .ns {
       field('w-members').textContent = s.activeMembers;
       field('w-available').textContent = s.availableNow;
 
-      var issues = await json(await api('/api/issues'));
+      var issues = await jsonOrThrow(await api('/api/issues'), 'Loans');
       var overdue = (issues || []).filter(function (r) {
         return r.status === 'ISSUED' && daysLate(r.dueDate) > 0;
       });
@@ -1704,7 +1712,7 @@ noscript .ns {
         });
       }
 
-      var logs = await json(await api('/api/logs'));
+      var logs = await jsonOrThrow(await api('/api/logs'), 'Activity logs');
       renderFeed((logs || []).slice(0, 6));
     } catch (err) { reportError(err); }
   }
@@ -1748,7 +1756,7 @@ noscript .ns {
   async function loadBooks() {
     skeletonRows(booksTbody, 8, 5);
     try {
-      books = await json(await api('/api/books' + bookQuery()));
+      books = await jsonOrThrow(await api('/api/books' + bookQuery()), 'Books');
       if (!Array.isArray(books)) books = [];
       populateGenreFilter();
       renderBooks();
@@ -2039,7 +2047,7 @@ noscript .ns {
   async function loadMembers() {
     skeletonRows(membersTbody, 5, 4);
     try {
-      members = await json(await api('/api/members'));
+      members = await jsonOrThrow(await api('/api/members'), 'Members');
       if (!Array.isArray(members)) members = [];
       renderMembers();
     } catch (err) { reportError(err); }
@@ -2203,7 +2211,7 @@ noscript .ns {
   async function loadCirculation() {
     skeletonRows(issuesTbody, 8, 4);
     try {
-      issues = await json(await api('/api/issues'));
+      issues = await jsonOrThrow(await api('/api/issues'), 'Loans');
       if (!Array.isArray(issues)) issues = [];
       renderIssues();
       await fillSelects();
@@ -2280,8 +2288,8 @@ noscript .ns {
   async function fillSelects() {
     var bk = field('i-book');
     var mb = field('i-member');
-    var booksAvail = await json(await api('/api/books'));
-    var mem = await json(await api('/api/members'));
+    var booksAvail = await jsonOrThrow(await api('/api/books'), 'Books');
+    var mem = await jsonOrThrow(await api('/api/members'), 'Members');
 
     bk.innerHTML = '';
     mb.innerHTML = '';
@@ -2334,7 +2342,7 @@ noscript .ns {
   async function loadLogs() {
     skeletonRows(logsTbody, 4, 6);
     try {
-      logsData = await json(await api('/api/logs'));
+      logsData = await jsonOrThrow(await api('/api/logs'), 'Activity logs');
       if (!Array.isArray(logsData)) logsData = [];
       populateActionFilter();
       renderLogs();

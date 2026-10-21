@@ -32,6 +32,9 @@ public class BookHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         SessionManager.Session session = Auth.session(ex);
         if (session == null) {
             send(ex, 401, error("Not authenticated"));
@@ -55,10 +58,10 @@ public class BookHandler implements HttpHandler {
         } catch (MethodNotAllowed e) {
             send(ex, 405, error("Method not allowed"));
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062 || "23000".equals(e.getSQLState())) {
+            if (e.getErrorCode() == 1062) {
                 send(ex, 409, error("A book with this ISBN already exists"));
             } else {
-                send(ex, 500, error(e.getMessage()));
+                send(ex, DbErrors.status(e), error(e.getMessage()));
             }
         }
     }
@@ -153,6 +156,10 @@ public class BookHandler implements HttpHandler {
             }
             case "DELETE" -> {
                 Book existing = dao.findById(id);
+                if (existing == null) {
+                    send(ex, 404, error("Book not found"));
+                    return;
+                }
                 dao.delete(id);
                 ActivityLogger.log(session.librarianId(), ActivityLogger.DELETE_BOOK,
                         existing != null ? "id " + id + " " + describe(existing) : "id " + id);
@@ -164,7 +171,7 @@ public class BookHandler implements HttpHandler {
 
     private void handleCondition(HttpExchange ex, int id, SessionManager.Session session)
             throws IOException, SQLException {
-        ConditionRequest req = read(ex, ConditionRequest.class);
+        ConditionRequest req = Json.read(ex, ConditionRequest.class);
         String next = req.condition() == null ? null : req.condition().trim();
         if (!isValidCondition(next)) {
             send(ex, 400, error("Condition must be Available, Damaged, or Lost"));
@@ -183,7 +190,7 @@ public class BookHandler implements HttpHandler {
     }
 
     private void handleImport(HttpExchange ex, SessionManager.Session session) throws IOException, SQLException {
-        String raw = readBody(ex);
+        String raw = Json.readBody(ex);
         List<String[]> rows = new ArrayList<>();
         for (String line : raw.split("\\r?\\n")) {
             if (!line.isBlank()) {
@@ -409,32 +416,8 @@ public class BookHandler implements HttpHandler {
         return digits.matches("\\d{10}") || digits.matches("\\d{13}");
     }
 
-    private String readBody(HttpExchange ex) throws IOException {
-        return new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-    }
-
     private Book readBook(HttpExchange ex) throws IOException {
-        String body = readBody(ex);
-        if (body.isEmpty()) {
-            throw new JsonSyntaxException("Empty request body");
-        }
-        Book book = GSON.fromJson(body, Book.class);
-        if (book == null) {
-            throw new JsonSyntaxException("Null request body");
-        }
-        return book;
-    }
-
-    private <T> T read(HttpExchange ex, Class<T> type) throws IOException {
-        String body = readBody(ex);
-        if (body.isEmpty()) {
-            throw new JsonSyntaxException("Empty request body");
-        }
-        T value = GSON.fromJson(body, type);
-        if (value == null) {
-            throw new JsonSyntaxException("Null request body");
-        }
-        return value;
+        return Json.read(ex, Book.class);
     }
 
     private void send(HttpExchange ex, int status, Object body) throws IOException {

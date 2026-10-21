@@ -57,7 +57,13 @@ public class IssueDAO {
                         "UPDATE books SET available_copies = available_copies - 1 "
                                 + "WHERE id = ? AND available_copies > 0")) {
                     ps.setInt(1, bookId);
-                    if (ps.executeUpdate() == 0) {
+                    int stockUpdated;
+                    try {
+                        stockUpdated = ps.executeUpdate();
+                    } catch (SQLException e) {
+                        throw DbErrors.wrap(e, "book stock");
+                    }
+                    if (stockUpdated == 0) {
                         throw new CirculationException(409, "No copies available to issue");
                     }
                 }
@@ -71,7 +77,7 @@ public class IssueDAO {
                     ps.setInt(2, memberId);
                     ps.setDate(3, Date.valueOf(today));
                     ps.setDate(4, Date.valueOf(due));
-                    ps.executeUpdate();
+                    execute(ps, "issue record");
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         keys.next();
                         recordId = keys.getInt(1);
@@ -104,14 +110,14 @@ public class IssueDAO {
                     ps.setDate(1, Date.valueOf(today));
                     ps.setBigDecimal(2, fine);
                     ps.setInt(3, recordId);
-                    ps.executeUpdate();
+                    execute(ps, "issue record");
                 }
                 // Give one copy back, guarded so it never exceeds total_copies.
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE books SET available_copies = available_copies + 1 "
                                 + "WHERE id = ? AND available_copies < total_copies")) {
                     ps.setInt(1, existing.bookId());
-                    ps.executeUpdate();
+                    execute(ps, "book stock");
                 }
                 conn.commit();
                 return new IssueRecord(recordId, existing.bookId(), existing.memberId(),
@@ -147,6 +153,15 @@ public class IssueDAO {
     }
 
     // ---------------------------------------------------------------- helpers --
+
+    /** Runs a write statement, translating PK/unique/FK constraint failures into readable errors. */
+    private static void execute(PreparedStatement ps, String entity) throws SQLException {
+        try {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw DbErrors.wrap(e, entity);
+        }
+    }
 
     private Member memberForIssue(Connection conn, int memberId) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(

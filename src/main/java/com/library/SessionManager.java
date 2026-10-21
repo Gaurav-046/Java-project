@@ -36,16 +36,17 @@ public final class SessionManager {
 
     /** Returns the live session for the token, or null when absent or expired. */
     public static Session get(String token) {
-        if (token == null || token.isEmpty()) {
+        if (token == null || token.isBlank()) {
             return null;
         }
+        String key = token.trim();
         prune();
-        Entry entry = SESSIONS.get(token);
+        Entry entry = SESSIONS.get(key);
         if (entry == null) {
             return null;
         }
         if (entry.expiresAt() < System.currentTimeMillis()) {
-            SESSIONS.remove(token);
+            SESSIONS.remove(key);
             return null;
         }
         return entry.session();
