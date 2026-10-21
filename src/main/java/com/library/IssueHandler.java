@@ -31,6 +31,9 @@ public class IssueHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         SessionManager.Session session = Auth.session(ex);
         if (session == null) {
             send(ex, 401, error("Not authenticated"));
@@ -60,12 +63,12 @@ public class IssueHandler implements HttpHandler {
         } catch (IssueDAO.CirculationException e) {
             send(ex, e.status(), error(e.getMessage()));
         } catch (SQLException e) {
-            send(ex, 500, error(e.getMessage()));
+            send(ex, DbErrors.status(e), error(e.getMessage()));
         }
     }
 
     private void issue(HttpExchange ex, SessionManager.Session session) throws IOException {
-        IssueRequest req = read(ex, IssueRequest.class);
+        IssueRequest req = Json.read(ex, IssueRequest.class);
         if (req.bookId() <= 0 || req.memberId() <= 0) {
             send(ex, 400, error("bookId and memberId are required"));
             return;
@@ -100,18 +103,6 @@ public class IssueHandler implements HttpHandler {
             throw new NumberFormatException(String.valueOf(segment));
         }
         return Integer.parseInt(segment.substring(1));
-    }
-
-    private <T> T read(HttpExchange ex, Class<T> type) throws IOException {
-        byte[] bytes = ex.getRequestBody().readAllBytes();
-        if (bytes.length == 0) {
-            throw new JsonSyntaxException("Empty request body");
-        }
-        T value = GSON.fromJson(new String(bytes, StandardCharsets.UTF_8), type);
-        if (value == null) {
-            throw new JsonSyntaxException("Null request body");
-        }
-        return value;
     }
 
     private void send(HttpExchange ex, int status, Object body) throws IOException {

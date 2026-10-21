@@ -21,6 +21,9 @@ public class LogHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         try {
             if (!"GET".equals(ex.getRequestMethod())) {
                 send(ex, 405, Map.of("error", "Method not allowed"));

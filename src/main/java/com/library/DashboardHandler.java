@@ -27,6 +27,9 @@ public class DashboardHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         SessionManager.Session session = Auth.session(ex);
         if (session == null) {
             send(ex, 401, Map.of("error", "Not authenticated"));

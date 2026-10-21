@@ -18,7 +18,7 @@ public class MemberDAO {
             ps.setString(2, emptyToNull(m.email()));
             ps.setString(3, emptyToNull(m.phone()));
             ps.setBoolean(4, m.activeStatus());
-            ps.executeUpdate();
+            execute(ps, "member");
         }
     }
 
@@ -59,7 +59,7 @@ public class MemberDAO {
             ps.setString(3, emptyToNull(m.phone()));
             ps.setBoolean(4, m.activeStatus());
             ps.setInt(5, m.id());
-            ps.executeUpdate();
+            execute(ps, "member");
         }
     }
 
@@ -72,7 +72,7 @@ public class MemberDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            ps.executeUpdate();
+            execute(ps, "member");
         }
     }
 
@@ -83,6 +83,15 @@ public class MemberDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    /** Runs a write statement, translating PK/unique/FK constraint failures into readable errors. */
+    private static void execute(PreparedStatement ps, String entity) throws SQLException {
+        try {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw DbErrors.wrap(e, entity);
         }
     }
 

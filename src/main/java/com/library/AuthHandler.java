@@ -32,6 +32,9 @@ public class AuthHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        if (Cors.handle(ex)) {
+            return;
+        }
         try {
             String path = ex.getRequestURI().getPath();
             if (path.endsWith("/login")) {
@@ -98,15 +101,7 @@ public class AuthHandler implements HttpHandler {
     }
 
     private Credentials readCredentials(HttpExchange ex) throws IOException {
-        byte[] bytes = ex.getRequestBody().readAllBytes();
-        if (bytes.length == 0) {
-            throw new JsonSyntaxException("Empty request body");
-        }
-        Credentials body = GSON.fromJson(new String(bytes, StandardCharsets.UTF_8), Credentials.class);
-        if (body == null) {
-            throw new JsonSyntaxException("Null request body");
-        }
-        return body;
+        return Json.read(ex, Credentials.class);
     }
 
     private static boolean isBlank(String value) {
