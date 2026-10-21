@@ -8,7 +8,7 @@ public class DBConnection {
 
     private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/library_db";
     private static final String DEFAULT_USER = "root";
-    private static final String DEFAULT_PASSWORD = "your_password";
+    private static final String DEFAULT_PASSWORD = "1234";
 
     private static final String URL = env("DB_URL", DEFAULT_URL);
     private static final String USER = env("DB_USER", DEFAULT_USER);

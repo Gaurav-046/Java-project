@@ -3,288 +3,1624 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Library - Books</title>
+<meta name="theme-color" content="#4f46e5">
+<meta name="description" content="Library staff console for cataloging, circulation, members and audit logs.">
+<title>Library — Staff Console</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f5f6f8; color: #1c1e21; }
-  h1 { margin: 0; font-size: 20px; }
-  h2 { margin: 0 0 12px; font-size: 16px; }
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  color-scheme: light;
 
-  #topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #fff; border-bottom: 1px solid #dcdfe3; }
-  #who { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-  #who-name { font-weight: 600; }
-  #who-role { color: #555; font-size: 12px; }
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  #tabs { display: flex; gap: 4px; padding: 12px 24px 0; flex-wrap: wrap; }
-  .tab { padding: 8px 16px; border: 1px solid #dcdfe3; border-bottom: none; border-radius: 6px 6px 0 0; background: #eceef1; font-size: 14px; cursor: pointer; }
-  .tab.active { background: #fff; font-weight: 600; }
+  /* surfaces */
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #eef2f7;
 
-  main { padding: 16px 24px 24px; }
-  .card { background: #fff; border: 1px solid #dcdfe3; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  /* ink */
+  --text: #0f172a;
+  --text-2: #334155;
+  --muted: #475569;
+  --subtle: #64748b;
+  --faint: #94a3b8;
+  --line: #e6eaf1;
+  --line-strong: #d7dde8;
 
-  label { display: flex; flex-direction: column; font-size: 12px; gap: 4px; color: #555; }
-  input, select { padding: 7px 9px; border: 1px solid #c6cbd1; border-radius: 5px; font-size: 14px; background: #fff; }
-  input:focus, select:focus { outline: 2px solid #7aa7f7; border-color: #7aa7f7; }
+  /* brand + status */
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --accent-ink: #3730a3;
 
-  button { padding: 8px 14px; border: 1px solid transparent; border-radius: 5px; font-size: 14px; cursor: pointer; background: #e8eaed; color: #1c1e21; }
-  button:hover { filter: brightness(0.95); }
-  .primary { background: #2563eb; color: #fff; }
-  .danger { background: #fee2e2; color: #b91c1c; border-color: #f3b0b0; }
-  .ghost { background: #e8eaed; }
-  .small { padding: 5px 9px; font-size: 13px; }
+  --green: #059669;  --green-soft: #ecfdf5;  --green-ink: #047857;
+  --amber: #d97706;  --amber-soft: #fffbeb;  --amber-ink: #b45309;
+  --red:   #dc2626;  --red-soft:   #fef2f2;  --red-ink:   #b91c1c;
+  --sky:   #0284c7;  --sky-soft:   #f0f9ff;  --sky-ink:   #075985;
 
-  #message { min-height: 20px; font-size: 14px; margin-bottom: 12px; }
-  #message.ok { color: #15803d; }
-  #message.error { color: #b91c1c; font-weight: 600; }
+  /* radius (6–12px scale) */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
 
-  table { width: 100%; border-collapse: collapse; background: #fff; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #e6e8eb; font-size: 14px; }
-  th { background: #f0f2f5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
-  tbody tr:hover { background: #fafbfc; }
-  td.empty { color: #777; font-style: italic; text-align: center; padding: 24px; }
-  .actions { white-space: nowrap; }
-  tr.overdue { background: #fef2f2; }
-  tr.overdue td { color: #b91c1c; }
-  tr.overdue:hover { background: #fee2e2; }
+  /* soft shadows */
+  --sh-1: 0 1px 2px rgba(15,23,42,.05), 0 1px 3px rgba(15,23,42,.04);
+  --sh-2: 0 6px 16px -8px rgba(15,23,42,.16), 0 2px 6px -3px rgba(15,23,42,.08);
+  --sh-3: 0 28px 56px -20px rgba(15,23,42,.32), 0 10px 22px -12px rgba(15,23,42,.16);
+  --sh-accent: 0 6px 14px -6px rgba(79,70,229,.55);
 
-  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef2ff; color: #3730a3; }
-  .pill.DELETE_BOOK, .pill.FAILED_LOGIN { background: #fee2e2; color: #b91c1c; }
-  .pill.LOGIN, .pill.LOGOUT, .pill.ISSUE_BOOK, .pill.RETURN_BOOK { background: #ecfdf5; color: #047857; }
-  .cond-Available { color: #15803d; font-weight: 600; }
-  .cond-Damaged { color: #b45309; font-weight: 600; }
-  .cond-Lost { color: #b91c1c; font-weight: 600; }
-  .status-open { color: #b45309; font-weight: 600; }
-  .status-returned { color: #15803d; font-weight: 600; }
+  --header-h: 64px;
+}
 
-  /* dashboard widgets */
-  .widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
-  .widget { background: #fff; border: 1px solid #dcdfe3; border-radius: 8px; padding: 16px; }
-  .widget .num { font-size: 30px; font-weight: 700; line-height: 1.1; }
-  .widget .lbl { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
-  .widget.warn .num { color: #b91c1c; }
-  .widget.good .num { color: #15803d; }
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; }
+p { margin: 0; }
+svg { display: block; flex: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+::placeholder { color: var(--faint); opacity: 1; }
 
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+.skip-link {
+  position: absolute; left: 12px; top: -60px; z-index: 500;
+  background: var(--accent); color: #fff; font-weight: 600; font-size: 14px;
+  padding: 9px 14px; border-radius: var(--r-md); text-decoration: none;
+  transition: top .15s ease;
+}
+.skip-link:focus { top: 12px; }
 
-  /* login overlay */
-  #login-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(28,30,33,0.45); padding: 16px; z-index: 10; }
-  #login-overlay[hidden] { display: none; }
-  .login-card { background: #fff; border-radius: 10px; padding: 24px; width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
-  .login-card h2 { margin: 0 0 16px; font-size: 18px; }
-  .login-card form { display: flex; flex-direction: column; gap: 10px; }
-  .login-card label { width: 100%; }
-  .login-card input { width: 100%; }
-  #login-btn { background: #2563eb; color: #fff; }
-  #login-error { min-height: 18px; color: #b91c1c; font-size: 13px; }
-  .hint { color: #777; font-size: 12px; margin: 6px 0 0; }
-  .hidden { display: none !important; }
+.shell { max-width: 1240px; margin-inline: auto; padding-inline: 24px; width: 100%; }
+.muted { color: var(--faint); }
+.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  border: 1px solid transparent; border-radius: var(--r-md);
+  background: var(--surface-3); color: var(--text-2);
+  font-size: 14px; font-weight: 600; line-height: 1;
+  cursor: pointer; white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.btn svg { width: 16px; height: 16px; }
+
+.btn-primary { background: var(--accent); color: #fff; box-shadow: var(--sh-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+.btn-secondary { background: var(--surface); color: var(--text-2); border-color: var(--line-strong); box-shadow: var(--sh-1); }
+.btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--faint); }
+
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+
+.btn-outline { background: var(--surface); color: var(--text-2); border-color: var(--line-strong); }
+.btn-outline:hover:not(:disabled) { background: var(--surface-2); }
+
+.btn-soft { background: var(--accent-soft); color: var(--accent-ink); }
+.btn-soft:hover:not(:disabled) { background: #e2e7fe; }
+
+.btn-danger-ghost { background: transparent; color: var(--red-ink); }
+.btn-danger-ghost:hover:not(:disabled) { background: var(--red-soft); }
+
+.btn-danger { background: var(--surface); color: var(--red-ink); border-color: #fecaca; }
+.btn-danger:hover:not(:disabled) { background: var(--red-soft); }
+
+.btn-danger-solid { background: var(--red); color: #fff; box-shadow: 0 6px 14px -8px rgba(220,38,38,.7); }
+.btn-danger-solid:hover:not(:disabled) { background: #b91c1c; }
+
+.btn-sm { height: 31px; padding: 0 11px; font-size: 12.5px; border-radius: var(--r-sm); gap: 6px; }
+.btn-sm svg { width: 14px; height: 14px; }
+.btn-block { width: 100%; }
+
+/* file picker label behaves like a button */
+label.btn { cursor: pointer; }
+
+/* ============================================================
+   HEADER / APP BAR
+   ============================================================ */
+.appbar {
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(255,255,255,.88);
+  backdrop-filter: saturate(1.6) blur(12px);
+  -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(15,23,42,.02), 0 8px 20px -18px rgba(15,23,42,.5);
+}
+.appbar-inner { height: var(--header-h); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; color: #fff;
+  background: linear-gradient(140deg, #6366f1, #4f46e5 55%, #3730a3);
+  box-shadow: var(--sh-accent);
+}
+.brand-mark svg { width: 19px; height: 19px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.brand-name { font-family: var(--font-display); font-weight: 800; font-size: 16.5px; letter-spacing: -.02em; }
+.brand-sub { font-size: 11.5px; color: var(--subtle); font-weight: 500; letter-spacing: .02em; }
+
+.who { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, #e0e7ff, #c7d2fe);
+  color: var(--accent-ink); font-size: 13px; font-weight: 700; letter-spacing: .02em;
+  box-shadow: inset 0 0 0 1px rgba(79,70,229,.16);
+}
+.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+.who-meta { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.who-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
+.who-role {
+  align-self: flex-start; margin-top: 2px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent-ink); background: var(--accent-soft);
+  padding: 1px 7px; border-radius: var(--r-pill);
+}
+.btn-logout { height: 36px; padding: 0 13px; font-size: 13.5px; background: var(--surface); color: var(--red-ink); border-color: #fecaca; }
+.btn-logout:hover { background: var(--red-soft); }
+
+/* ============================================================
+   TABS (segmented control)
+   ============================================================ */
+.tabbar {
+  position: sticky; top: var(--header-h); z-index: 50;
+  background: rgba(244,246,250,.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 14px 0 6px;
+}
+.seg {
+  display: inline-flex; gap: 4px; padding: 4px;
+  background: #e7ebf3; border-radius: var(--r-lg);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.05);
+  max-width: 100%;
+}
+.seg-scroll { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.seg-scroll::-webkit-scrollbar { display: none; }
+.tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 0; background: transparent; cursor: pointer;
+  padding: 8px 15px; border-radius: var(--r-md);
+  font-size: 13.5px; font-weight: 600; color: var(--muted); white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.tab svg { width: 15px; height: 15px; opacity: .85; }
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] {
+  background: var(--surface); color: var(--accent-ink);
+  box-shadow: var(--sh-1);
+}
+
+/* ============================================================
+   PANELS / CARDS
+   ============================================================ */
+.page { display: flex; flex-direction: column; gap: 16px; padding-top: 18px; padding-bottom: 56px; }
+
+.panel-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 2px;
+}
+.panel-title { font-size: 23px; font-weight: 700; }
+.panel-sub { color: var(--subtle); font-size: 14px; margin-top: 3px; }
+.panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  padding: 20px;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.card-title { font-size: 16px; font-weight: 700; }
+.card-sub { color: var(--subtle); font-size: 13px; margin-top: 2px; }
+.card.flush { padding: 0; overflow: hidden; }
+.card.flush .card-head { padding: 18px 20px 12px; margin-bottom: 0; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; align-items: start; }
+
+.count-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-3); color: var(--muted);
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: var(--r-pill);
+}
+
+/* ============================================================
+   DASHBOARD KPIs
+   ============================================================ */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 16px; }
+.kpi {
+  position: relative; overflow: hidden;
+  background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: var(--sh-1); padding: 16px 18px 17px;
+  display: flex; flex-direction: column; gap: 7px;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.kpi:hover { box-shadow: var(--sh-2); transform: translateY(-2px); }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kpi-label { font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--subtle); }
+.kpi-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; }
+.kpi-icon svg { width: 17px; height: 17px; }
+.kpi-icon-indigo { background: var(--accent-soft); color: var(--accent); }
+.kpi-icon-sky    { background: var(--sky-soft);    color: var(--sky); }
+.kpi-icon-red    { background: var(--red-soft);    color: var(--red); }
+.kpi-icon-green  { background: var(--green-soft);  color: var(--green); }
+.kpi-icon-amber  { background: var(--amber-soft);  color: var(--amber); }
+.kpi-value {
+  font-family: var(--font-display); font-size: 30px; font-weight: 800;
+  line-height: 1.05; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+}
+.kpi-hint { font-size: 12.5px; color: var(--faint); }
+.kpi.is-alert .kpi-value { color: var(--red); }
+
+/* ============================================================
+   TOOLBAR / SEARCH / FILTERS
+   ============================================================ */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.toolbar + .toolbar, .toolbar + .adv, .adv + .toolbar { margin-top: 12px; }
+
+.search { position: relative; flex: 1 1 300px; min-width: 200px; }
+.search svg {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--faint); pointer-events: none;
+}
+.search input {
+  width: 100%; height: 40px;
+  padding: 0 14px 0 38px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface); font-size: 14px; color: var(--text);
+  -webkit-appearance: none; appearance: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+
+select.control {
+  height: 40px; padding: 0 32px 0 13px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background-color: var(--surface); color: var(--text-2);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+select.control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+select.control.is-active { border-color: var(--accent); background-color: var(--accent-soft); color: var(--accent-ink); }
+option { color: var(--text); background: #fff; }
+
+.adv {
+  margin-top: 12px; padding: 14px;
+  background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+}
+.adv > summary {
+  cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+  list-style: none; display: inline-flex; align-items: center; gap: 7px;
+  margin-bottom: 12px;
+}
+.adv > summary::-webkit-details-marker { display: none; }
+.adv > summary::before {
+  content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg); transition: transform .15s ease; margin-right: 2px;
+}
+.adv[open] > summary::before { transform: rotate(45deg); }
+.adv .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.adv .hint { font-size: 12px; color: var(--faint); margin-top: 10px; }
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.field .req { color: var(--red); }
+.input, .field input, .field select {
+  height: 40px; width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface); font-size: 14px; color: var(--text);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.field input:focus, .field select:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+}
+.field .field-error { font-size: 12.5px; color: var(--red-ink); min-height: 0; display: none; }
+.field.invalid input, .field.invalid select { border-color: var(--red); box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
+.field.invalid .field-error { display: block; }
+.field .hint-text { font-size: 12px; color: var(--faint); }
+
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+
+.form-error {
+  display: none; align-items: flex-start; gap: 8px;
+  background: var(--red-soft); color: var(--red-ink);
+  border: 1px solid #fecaca; border-radius: var(--r-md);
+  padding: 10px 12px; font-size: 13.5px; font-weight: 500;
+  margin-bottom: 14px;
+}
+.form-error.show { display: flex; }
+.form-error svg { width: 16px; height: 16px; margin-top: 1px; }
+
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; padding: 11px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--subtle); white-space: nowrap;
+}
+tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px; color: var(--text-2);
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) { background: #fcfdff; }
+tbody tr:hover { background: #f4f7fd; }
+tbody tr.row-overdue, tbody tr.row-overdue:hover { background: var(--red-soft); }
+tbody tr.row-overdue td { color: var(--red-ink); }
+
+#books { min-width: 900px; }
+#members { min-width: 660px; }
+#issues { min-width: 860px; }
+#logs { min-width: 720px; }
+#dash-overdue { min-width: 540px; }
+
+.cell-strong { font-weight: 600; color: var(--text); }
+.cell-title { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-empty { text-align: center; padding: 40px 16px !important; }
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  color: var(--subtle); font-size: 14px;
+}
+.empty svg { width: 26px; height: 26px; color: var(--faint); opacity: .8; }
+
+.person { display: flex; align-items: center; gap: 10px; }
+
+.stock { display: flex; flex-direction: column; gap: 6px; min-width: 84px; }
+.stock-num { font-size: 13px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.stock-bar { height: 5px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+.stock-fill { display: block; height: 100%; border-radius: var(--r-pill); background: var(--green); }
+.stock-fill.low { background: var(--amber); }
+.stock-fill.is-zero { background: var(--red); }
+
+.actions-cell { white-space: nowrap; }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* ============================================================
+   BADGES / PILLS / TAGS
+   ============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-green  { background: var(--green-soft); color: var(--green-ink); }
+.badge-amber  { background: var(--amber-soft); color: var(--amber-ink); }
+.badge-red    { background: var(--red-soft);   color: var(--red-ink); }
+.badge-slate  { background: var(--surface-3);  color: var(--muted); }
+.badge-indigo { background: var(--accent-soft); color: var(--accent-ink); }
+.badge-sky    { background: var(--sky-soft);   color: var(--sky-ink); }
+
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+}
+.pill-green  { background: var(--green-soft);  color: var(--green-ink); }
+.pill-red    { background: var(--red-soft);    color: var(--red-ink); }
+.pill-amber  { background: var(--amber-soft);  color: var(--amber-ink); }
+.pill-sky    { background: var(--sky-soft);    color: var(--sky-ink); }
+.pill-indigo { background: var(--accent-soft); color: var(--accent-ink); }
+
+.tag {
+  display: inline-block; padding: 2px 9px; border-radius: var(--r-sm);
+  background: var(--surface-3); color: var(--muted);
+  font-size: 12px; font-weight: 600;
+}
+
+/* condition selector rendered as a colour-coded badge */
+.cond-select {
+  -webkit-appearance: none; appearance: none;
+  border: 1px solid transparent; cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  padding: 4px 22px 4px 11px; border-radius: var(--r-pill);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 7px center;
+  transition: box-shadow .15s ease;
+}
+.cond-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(79,70,229,.18); }
+.cond-Available { background-color: var(--green-soft); color: var(--green-ink); }
+.cond-Damaged   { background-color: var(--amber-soft); color: var(--amber-ink); }
+.cond-Lost      { background-color: var(--red-soft);   color: var(--red-ink); }
+
+.fine { font-weight: 700; color: var(--amber-ink); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   ACTIVITY FEED (dashboard)
+   ============================================================ */
+.feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.feed li {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 11px 0; border-bottom: 1px solid var(--line);
+}
+.feed li:last-child { border-bottom: 0; padding-bottom: 0; }
+.feed li:first-child { padding-top: 0; }
+.feed-body { min-width: 0; }
+.feed-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.feed-who { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.feed-sub { font-size: 12.5px; color: var(--subtle); margin-top: 3px; overflow-wrap: anywhere; }
+.feed-time { color: var(--faint); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   DIALOGS / MODALS
+   ============================================================ */
+dialog.modal {
+  padding: 0; border: 0; background: transparent;
+  width: 100%; max-width: min(560px, calc(100vw - 32px));
+  margin: auto; overflow: visible;
+}
+dialog.modal.modal-sm { max-width: min(430px, calc(100vw - 32px)); }
+dialog.modal::backdrop { background: rgba(15,23,42,.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+
+.modal-surface {
+  background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: var(--sh-3); overflow: hidden;
+  max-height: calc(100vh - 56px); display: flex; flex-direction: column;
+  animation: modal-in .18s cubic-bezier(.22,1,.36,1);
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 20px 22px 4px;
+}
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-sub { font-size: 13.5px; color: var(--subtle); margin-top: 4px; }
+.modal-close {
+  border: 0; background: transparent; color: var(--subtle);
+  width: 32px; height: 32px; border-radius: var(--r-md);
+  display: grid; place-items: center; cursor: pointer; flex: none;
+  transition: background-color .15s ease, color .15s ease;
+}
+.modal-close:hover { background: var(--surface-3); color: var(--text); }
+.modal-close svg { width: 17px; height: 17px; }
+.modal-body { padding: 16px 22px 20px; overflow-y: auto; }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 22px; border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.modal-message { font-size: 14.5px; color: var(--muted); line-height: 1.55; }
+
+/* ============================================================
+   TOASTS
+   ============================================================ */
+#toasts {
+  position: fixed; top: calc(var(--header-h) + 14px); right: 18px; z-index: 400;
+  display: flex; flex-direction: column; gap: 10px;
+  width: min(370px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 12px 12px 12px 14px;
+  box-shadow: var(--sh-2), 0 0 0 1px rgba(15,23,42,.05);
+  border-left: 3px solid var(--green);
+  animation: toast-in .22s cubic-bezier(.22,1,.36,1);
+}
+.toast-error { border-left-color: var(--red); }
+.toast-info { border-left-color: var(--accent); }
+.toast-icon { color: var(--green); margin-top: 1px; }
+.toast-error .toast-icon { color: var(--red); }
+.toast-info .toast-icon { color: var(--accent); }
+.toast-icon svg { width: 17px; height: 17px; }
+.toast-msg { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--text-2); overflow-wrap: anywhere; }
+.toast-close {
+  border: 0; background: transparent; color: var(--faint); cursor: pointer;
+  width: 24px; height: 24px; border-radius: var(--r-sm);
+  display: grid; place-items: center; flex: none;
+}
+.toast-close:hover { background: var(--surface-3); color: var(--text); }
+.toast-close svg { width: 13px; height: 13px; }
+.toast-out { opacity: 0; transform: translateX(14px); transition: opacity .2s ease, transform .2s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center; padding: 20px;
+  background:
+    radial-gradient(900px 460px at 50% -8%, rgba(79,70,229,.18), transparent 62%),
+    radial-gradient(700px 420px at 92% 108%, rgba(2,132,199,.14), transparent 60%),
+    var(--bg);
+}
+.login-card {
+  width: min(408px, 100%);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--sh-3);
+  padding: 28px; animation: modal-in .25s cubic-bezier(.22,1,.36,1);
+}
+.login-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; }
+.login-card h1 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
+.login-sub { color: var(--subtle); font-size: 13.5px; margin-top: 5px; margin-bottom: 20px; }
+.login-card form { display: flex; flex-direction: column; gap: 14px; }
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 42px; }
+.pw-toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  border: 0; background: transparent; color: var(--faint);
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+.pw-toggle:hover { background: var(--surface-3); color: var(--muted); }
+.pw-toggle svg { width: 16px; height: 16px; }
+#login-error {
+  display: none; align-items: center; gap: 8px;
+  background: var(--red-soft); border: 1px solid #fecaca; color: var(--red-ink);
+  border-radius: var(--r-md); padding: 9px 11px; font-size: 13.5px; font-weight: 500;
+}
+#login-error.show { display: flex; }
+#login-error svg { width: 15px; height: 15px; flex: none; }
+.login-hint {
+  margin-top: 16px; padding: 10px 12px;
+  background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  font-size: 12.5px; color: var(--subtle);
+}
+.login-hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--surface-3); color: var(--text-2);
+  padding: 1px 6px; border-radius: var(--r-sm); font-size: 12px;
+}
+
+/* ============================================================
+   LOADING / SKELETON / UTILITIES
+   ============================================================ */
+.skel {
+  display: block; height: 12px; border-radius: var(--r-sm);
+  background: linear-gradient(90deg, #eef1f7 25%, #f7f9fc 37%, #eef1f7 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+.spin {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.45); border-top-color: #fff;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+noscript .ns {
+  display: block; margin: 24px auto; max-width: 560px;
+  background: var(--amber-soft); border: 1px solid #fde68a; color: #92400e;
+  padding: 14px 16px; border-radius: var(--r-md); font-size: 14px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .shell { padding-inline: 16px; }
+  .kpi-value { font-size: 27px; }
+}
+@media (max-width: 760px) {
+  .panel-head { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .panel-actions { width: 100%; }
+  .panel-actions .btn { flex: 0 1 auto; }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .tab { padding: 8px 12px; font-size: 13px; }
+  .seg { width: 100%; }
+  #toasts { left: 16px; right: 16px; width: auto; }
+}
+@media (max-width: 640px) {
+  .brand-sub, .who-meta { display: none; }
+  .search { flex-basis: 100%; }
+  .toolbar .control { flex: 1 1 calc(50% - 5px); }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .card { padding: 16px; }
+  .card.flush { padding: 0; }
+  .card.flush .card-head { padding: 16px 16px 10px; }
+  .grid-2 { grid-template-columns: minmax(0, 1fr); }
+  .modal-foot .btn, .form-actions .btn { flex: 1; }
+  .row-actions { justify-content: flex-start; }
+}
+@media (max-width: 420px) {
+  .btn-logout span { display: none; }
+  .btn-logout { padding: 0 10px; }
+  .kpi { padding: 14px; }
+  .login-card { padding: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
 </style>
 </head>
 <body>
 
-<header id="topbar">
-  <h1>Library &mdash; Books</h1>
-  <div id="who" hidden>
-    <span id="who-name"></span>
-    <span id="who-role"></span>
-    <button type="button" id="logout" class="danger">Logout</button>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============================== APP BAR ============================== -->
+<header class="appbar">
+  <div class="shell appbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">Library</span>
+        <span class="brand-sub">Catalog &amp; circulation desk</span>
+      </span>
+    </div>
+
+    <div class="who" id="who" hidden>
+      <span class="avatar" id="who-avatar" aria-hidden="true">?</span>
+      <span class="who-meta">
+        <span class="who-name" id="who-name"></span>
+        <span class="who-role" id="who-role"></span>
+      </span>
+      <button type="button" id="logout" class="btn btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Log out</span>
+      </button>
+    </div>
   </div>
 </header>
 
-<div id="tabs">
-  <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
-  <button type="button" class="tab" data-tab="books">Books</button>
-  <button type="button" class="tab" data-tab="members">Members</button>
-  <button type="button" class="tab" data-tab="circulation">Circulation</button>
-  <button type="button" class="tab" data-tab="logs">Activity Logs</button>
-</div>
-
-<main>
-  <div id="message" role="status" aria-live="polite"></div>
-
-  <!-- ============================== DASHBOARD ============================= -->
-  <section id="panel-dashboard">
-    <div class="widgets">
-      <div class="widget"><div class="num" id="w-total">–</div><div class="lbl">Total Books</div></div>
-      <div class="widget"><div class="num" id="w-issued">–</div><div class="lbl">Currently Issued</div></div>
-      <div class="widget warn"><div class="num" id="w-overdue">–</div><div class="lbl">Overdue</div></div>
-      <div class="widget good"><div class="num" id="w-members">–</div><div class="lbl">Active Members</div></div>
-      <div class="widget"><div class="num" id="w-available">–</div><div class="lbl">Available Now</div></div>
+<!-- ============================== TABS ============================== -->
+<nav class="tabbar" aria-label="Sections">
+  <div class="shell">
+    <div class="seg seg-scroll" role="tablist" id="tabs">
+      <button type="button" class="tab" role="tab" id="tab-dashboard" aria-controls="panel-dashboard" aria-selected="true" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button type="button" class="tab" role="tab" id="tab-books" aria-controls="panel-books" aria-selected="false" tabindex="-1" data-tab="books">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/></svg>
+        Catalog
+      </button>
+      <button type="button" class="tab" role="tab" id="tab-circulation" aria-controls="panel-circulation" aria-selected="false" tabindex="-1" data-tab="circulation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 13"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Issue / Return
+      </button>
+      <button type="button" class="tab" role="tab" id="tab-members" aria-controls="panel-members" aria-selected="false" tabindex="-1" data-tab="members">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Members
+      </button>
+      <button type="button" class="tab" role="tab" id="tab-logs" aria-controls="panel-logs" aria-selected="false" tabindex="-1" data-tab="logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Activity Logs
+      </button>
     </div>
-    <div class="card" style="margin-top:20px">
-      <h2>Overdue transactions</h2>
-      <table id="dash-overdue">
-        <thead><tr><th>Member</th><th>Book</th><th>Due</th><th>Days late</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+  </div>
+</nav>
 
-  <!-- ================================= BOOKS ============================== -->
-  <section id="panel-books" hidden>
-    <div class="card">
-      <div class="toolbar">
-        <label>Title <input id="s-title" type="text" placeholder="search title"></label>
-        <label>Author <input id="s-author" type="text" placeholder="search author"></label>
-        <label>Genre <input id="s-genre" type="text" placeholder="search genre"></label>
-        <label>ISBN <input id="s-isbn" type="text" placeholder="search ISBN"></label>
-        <button type="button" id="btn-search" class="primary">Search</button>
-        <button type="button" id="btn-search-clear" class="ghost">Clear</button>
-        <span style="flex:1"></span>
-        <button type="button" id="btn-export" class="ghost">Export CSV</button>
-        <label class="ghost" style="cursor:pointer">Import CSV<input id="csv-file" type="file" accept=".csv,text/csv" class="hidden"></label>
+<noscript><span class="ns">This console needs JavaScript enabled — every search, form and table is driven in the browser.</span></noscript>
+
+<!-- ============================== MAIN ============================== -->
+<main id="main" class="shell page">
+
+  <!-- ------------------------------ DASHBOARD ------------------------------ -->
+  <section id="panel-dashboard" class="panel" role="tabpanel" aria-labelledby="tab-dashboard">
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Dashboard</h1>
+        <p class="panel-sub">A live snapshot of circulation, stock and membership.</p>
+      </div>
+      <div class="panel-actions">
+        <button type="button" id="dash-refresh" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-label">Total Books</span>
+          <span class="kpi-icon kpi-icon-indigo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+        </div>
+        <div class="kpi-value" id="w-total">–</div>
+        <div class="kpi-hint">copies in the collection</div>
       </div>
 
-      <form id="book-form" class="row" autocomplete="off">
-        <input type="hidden" id="b-id">
-        <label>Title <input id="b-title" type="text" required></label>
-        <label>Author <input id="b-author" type="text" required></label>
-        <label>ISBN <input id="b-isbn" type="text" placeholder="optional"></label>
-        <label>Year <input id="b-year" type="number" min="0" max="2100"></label>
-        <label>Genre <input id="b-genre" type="text" placeholder="optional"></label>
-        <label>Copies <input id="b-copies" type="number" min="1" value="1"></label>
-        <button type="submit" id="b-save" class="primary">Save</button>
-        <button type="button" id="b-clear" class="ghost">Clear</button>
-      </form>
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-label">Checked Out</span>
+          <span class="kpi-icon kpi-icon-sky" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg></span>
+        </div>
+        <div class="kpi-value" id="w-issued">–</div>
+        <div class="kpi-hint">loans currently open</div>
+      </div>
+
+      <div class="kpi is-alert">
+        <div class="kpi-top">
+          <span class="kpi-label">Overdue</span>
+          <span class="kpi-icon kpi-icon-red" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        </div>
+        <div class="kpi-value" id="w-overdue">–</div>
+        <div class="kpi-hint">past their due date</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-label">Active Members</span>
+          <span class="kpi-icon kpi-icon-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        </div>
+        <div class="kpi-value" id="w-members">–</div>
+        <div class="kpi-hint">registered borrowers</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-label">Available Now</span>
+          <span class="kpi-icon kpi-icon-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        </div>
+        <div class="kpi-value" id="w-available">–</div>
+        <div class="kpi-hint">ready to borrow today</div>
+      </div>
     </div>
 
-    <div class="card">
-      <table id="books">
-        <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Year</th><th>Genre</th><th>Condition</th><th>Stock</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card flush">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">Overdue transactions</h2>
+            <p class="card-sub">Loans that need a follow-up.</p>
+          </div>
+          <span class="count-chip" id="overdue-count">0</span>
+        </div>
+        <div class="table-wrap">
+          <table id="dash-overdue">
+            <thead><tr><th>Member</th><th>Book</th><th>Due</th><th>Days late</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card flush">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">Recent activity</h2>
+            <p class="card-sub">Latest actions recorded by staff.</p>
+          </div>
+        </div>
+        <div style="padding:0 20px 18px">
+          <ul class="feed" id="dash-feed"></ul>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- =============================== MEMBERS ============================== -->
-  <section id="panel-members" hidden>
-    <div class="card">
-      <form id="member-form" class="row" autocomplete="off">
-        <input type="hidden" id="m-id">
-        <label>Name <input id="m-name" type="text" required></label>
-        <label>Email <input id="m-email" type="email" placeholder="optional"></label>
-        <label>Phone <input id="m-phone" type="text" placeholder="optional"></label>
-        <button type="submit" id="m-save" class="primary">Save</button>
-        <button type="button" id="m-clear" class="ghost">Clear</button>
-      </form>
+  <!-- -------------------------------- CATALOG -------------------------------- -->
+  <section id="panel-books" class="panel" role="tabpanel" aria-labelledby="tab-books" hidden>
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Catalog</h1>
+        <p class="panel-sub">Search, add and maintain the book collection.</p>
+      </div>
+      <div class="panel-actions">
+        <button type="button" id="btn-export" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <label class="btn btn-secondary" for="csv-file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import CSV
+        </label>
+        <input id="csv-file" type="file" accept=".csv,text/csv" class="sr-only">
+        <button type="button" id="btn-add-book" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add book
+        </button>
+      </div>
     </div>
+
     <div class="card">
-      <table id="members">
-        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="q-books" type="search" placeholder="Search by title, author, ISBN or genre…" aria-label="Search the catalog">
+        </div>
+        <select id="f-genre" class="control" aria-label="Filter by genre">
+          <option value="">All genres</option>
+        </select>
+        <select id="f-condition" class="control" aria-label="Filter by condition">
+          <option value="">Any condition</option>
+          <option value="Available">Available</option>
+          <option value="Damaged">Damaged</option>
+          <option value="Lost">Lost</option>
+        </select>
+        <button type="button" id="btn-clear-filters" class="btn btn-ghost" hidden>Clear filters</button>
+      </div>
+
+      <details class="adv">
+        <summary>Advanced search (server-side)</summary>
+        <div class="row">
+          <label class="field"><span>Title</span><input id="s-title" type="text" placeholder="exact-ish match"></label>
+          <label class="field"><span>Author</span><input id="s-author" type="text" placeholder="author"></label>
+          <label class="field"><span>Genre</span><input id="s-genre" type="text" placeholder="genre"></label>
+          <label class="field"><span>ISBN</span><input id="s-isbn" type="text" placeholder="ISBN"></label>
+          <button type="button" id="btn-search" class="btn btn-primary btn-sm">Search database</button>
+          <button type="button" id="btn-search-clear" class="btn btn-outline btn-sm">Clear</button>
+        </div>
+        <p class="hint">Queries <code>/api/books?title=…&amp;author=…&amp;genre=…&amp;isbn=…</code> directly; the quick search above filters results instantly in the browser.</p>
+      </details>
+    </div>
+
+    <div class="card flush">
+      <div class="card-head">
+        <h2 class="card-title">Books</h2>
+        <span class="count-chip" id="books-count">0</span>
+      </div>
+      <div class="table-wrap">
+        <table id="books">
+          <thead>
+            <tr>
+              <th scope="col">Title</th><th scope="col">Author</th><th scope="col">ISBN</th>
+              <th scope="col">Year</th><th scope="col">Genre</th><th scope="col">Condition</th>
+              <th scope="col">Stock</th><th scope="col" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <!-- ============================= CIRCULATION ============================ -->
-  <section id="panel-circulation" hidden>
+  <!-- ------------------------------ ISSUE / RETURN ------------------------------ -->
+  <section id="panel-circulation" class="panel" role="tabpanel" aria-labelledby="tab-circulation" hidden>
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Issue / Return</h1>
+        <p class="panel-sub">Lend copies, take returns and settle fines.</p>
+      </div>
+    </div>
+
     <div class="card">
-      <h2>Issue a book</h2>
-      <form id="issue-form" class="row" autocomplete="off">
-        <label>Book <select id="i-book"></select></label>
-        <label>Member <select id="i-member"></select></label>
-        <button type="submit" class="primary">Issue</button>
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Issue a book</h2>
+          <p class="card-sub">Loans run for 14 days; overdue returns accrue a fine.</p>
+        </div>
+      </div>
+      <form id="issue-form" autocomplete="off">
+        <div class="form-grid">
+          <label class="field">
+            <span>Book <span class="req">*</span></span>
+            <select id="i-book" required></select>
+            <span class="hint-text">Only copies with available stock are listed.</span>
+          </label>
+          <label class="field">
+            <span>Member <span class="req">*</span></span>
+            <select id="i-member" required></select>
+            <span class="hint-text">Only active members are listed.</span>
+          </label>
+        </div>
+        <div class="form-actions" style="margin-top:16px">
+          <button type="submit" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Issue book
+          </button>
+        </div>
       </form>
     </div>
-    <div class="card">
-      <table id="issues">
-        <thead><tr><th>Member</th><th>Book</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th><th>Fine</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
+
+    <div class="card flush">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Loan history</h2>
+          <p class="card-sub">Newest first — overdue rows are highlighted in red.</p>
+        </div>
+        <span class="count-chip" id="loan-count">0</span>
+      </div>
+      <div style="padding:0 20px 16px">
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="q-loans" type="search" placeholder="Search loans by member or book…" aria-label="Search loans">
+          </div>
+          <select id="f-loan" class="control" aria-label="Filter loans by status">
+            <option value="">All loans</option>
+            <option value="ISSUED">Issued</option>
+            <option value="OVERDUE">Overdue</option>
+            <option value="RETURNED">Returned</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="issues">
+          <thead>
+            <tr>
+              <th scope="col">Member</th><th scope="col">Book</th><th scope="col">Issued</th>
+              <th scope="col">Due</th><th scope="col">Returned</th><th scope="col">Status</th>
+              <th scope="col">Fine</th><th scope="col" style="text-align:right">Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <!-- ============================ ACTIVITY LOGS =========================== -->
-  <section id="panel-logs" hidden>
-    <div class="card">
-      <table id="logs">
-        <thead><tr><th>Time</th><th>Librarian</th><th>Action</th><th>Details</th></tr></thead>
-        <tbody></tbody>
-      </table>
+  <!-- -------------------------------- MEMBERS -------------------------------- -->
+  <section id="panel-members" class="panel" role="tabpanel" aria-labelledby="tab-members" hidden>
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Members</h1>
+        <p class="panel-sub">Borrower records, contact details and account status.</p>
+      </div>
+      <div class="panel-actions">
+        <button type="button" id="btn-add-member" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add member
+        </button>
+      </div>
+    </div>
+
+    <div class="card flush">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Member records</h2>
+          <p class="card-sub">Deactivating a member keeps their loan history intact.</p>
+        </div>
+        <span class="count-chip" id="m-count">0</span>
+      </div>
+      <div style="padding:0 20px 16px">
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="q-members" type="search" placeholder="Search members by name, email or phone…" aria-label="Search members">
+          </div>
+          <select id="f-mstatus" class="control" aria-label="Filter members by status">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="members">
+          <thead>
+            <tr>
+              <th scope="col">Name</th><th scope="col">Email</th><th scope="col">Phone</th>
+              <th scope="col">Status</th><th scope="col" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------ ACTIVITY LOGS ------------------------------ -->
+  <section id="panel-logs" class="panel" role="tabpanel" aria-labelledby="tab-logs" hidden>
+    <div class="panel-head">
+      <div>
+        <h1 class="panel-title">Activity Logs</h1>
+        <p class="panel-sub">Audit trail of every action taken in the console.</p>
+      </div>
+      <div class="panel-actions">
+        <button type="button" id="logs-refresh" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="card flush">
+      <div class="card-head">
+        <div class="toolbar" style="flex:1">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="q-logs" type="search" placeholder="Search activity by action, librarian or detail…" aria-label="Search activity logs">
+          </div>
+          <select id="f-action" class="control" aria-label="Filter by action type">
+            <option value="">All actions</option>
+          </select>
+        </div>
+        <span class="count-chip" id="logs-count">0</span>
+      </div>
+      <div class="table-wrap">
+        <table id="logs">
+          <thead>
+            <tr>
+              <th scope="col">Time</th><th scope="col">Librarian</th>
+              <th scope="col">Action</th><th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 </main>
 
-<!-- ================================ LOGIN ================================ -->
+<!-- ============================== MODALS ============================== -->
+
+<!-- Add / edit book -->
+<dialog id="book-modal" class="modal" aria-labelledby="book-modal-title">
+  <div class="modal-surface">
+    <div class="modal-head">
+      <div>
+        <h2 class="modal-title" id="book-modal-title">Add book</h2>
+        <p class="modal-sub" id="book-modal-sub">Create a new catalog title and set its stock.</p>
+      </div>
+      <button type="button" class="modal-close" data-close aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="book-form" autocomplete="off" novalidate>
+      <div class="modal-body">
+        <div class="form-error" id="book-form-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span></span>
+        </div>
+        <input type="hidden" id="b-id">
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="b-title">Title <span class="req">*</span></label>
+            <input id="b-title" type="text" maxlength="200" placeholder="e.g. The Hobbit" aria-describedby="err-b-title" required>
+            <p class="field-error" id="err-b-title"></p>
+          </div>
+          <div class="field">
+            <label for="b-author">Author <span class="req">*</span></label>
+            <input id="b-author" type="text" maxlength="100" placeholder="e.g. J.R.R. Tolkien" aria-describedby="err-b-author" required>
+            <p class="field-error" id="err-b-author"></p>
+          </div>
+          <div class="field">
+            <label for="b-isbn">ISBN</label>
+            <input id="b-isbn" type="text" inputmode="numeric" placeholder="10 or 13 digits" aria-describedby="err-b-isbn">
+            <p class="field-error" id="err-b-isbn"></p>
+          </div>
+          <div class="field">
+            <label for="b-year">Publish year</label>
+            <input id="b-year" type="number" min="1450" max="2100" placeholder="e.g. 1937" aria-describedby="err-b-year">
+            <p class="field-error" id="err-b-year"></p>
+          </div>
+          <div class="field">
+            <label for="b-genre">Genre</label>
+            <input id="b-genre" type="text" maxlength="50" placeholder="e.g. Fantasy" aria-describedby="err-b-genre">
+            <p class="field-error" id="err-b-genre"></p>
+          </div>
+          <div class="field">
+            <label for="b-copies">Total copies</label>
+            <input id="b-copies" type="number" min="1" step="1" value="1" aria-describedby="err-b-copies">
+            <p class="field-error" id="err-b-copies"></p>
+          </div>
+          <div class="field" id="b-condition-field">
+            <label for="b-condition">Condition</label>
+            <select id="b-condition">
+              <option value="Available">Available</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Lost">Lost</option>
+            </select>
+            <p class="field-error" id="err-b-condition"></p>
+          </div>
+        </div>
+        <p class="hint-text" style="margin-top:12px">Fields marked <span class="req">*</span> are required. Stock is clipped to total copies automatically.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" data-close>Cancel</button>
+        <button type="submit" id="b-save" class="btn btn-primary">Add book</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Add / edit member -->
+<dialog id="member-modal" class="modal" aria-labelledby="member-modal-title">
+  <div class="modal-surface">
+    <div class="modal-head">
+      <div>
+        <h2 class="modal-title" id="member-modal-title">Add member</h2>
+        <p class="modal-sub" id="member-modal-sub">Register a borrower who can check out books.</p>
+      </div>
+      <button type="button" class="modal-close" data-close aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="member-form" autocomplete="off" novalidate>
+      <div class="modal-body">
+        <div class="form-error" id="member-form-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span></span>
+        </div>
+        <input type="hidden" id="m-id">
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="m-name">Full name <span class="req">*</span></label>
+            <input id="m-name" type="text" maxlength="100" placeholder="e.g. Amara Okafor" aria-describedby="err-m-name" required>
+            <p class="field-error" id="err-m-name"></p>
+          </div>
+          <div class="field">
+            <label for="m-email">Email</label>
+            <input id="m-email" type="email" maxlength="120" placeholder="name@example.com" aria-describedby="err-m-email">
+            <p class="field-error" id="err-m-email"></p>
+          </div>
+          <div class="field">
+            <label for="m-phone">Phone</label>
+            <input id="m-phone" type="text" maxlength="30" placeholder="e.g. +1 555 0100" aria-describedby="err-m-phone">
+            <p class="field-error" id="err-m-phone"></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" data-close>Cancel</button>
+        <button type="submit" id="m-save" class="btn btn-primary">Add member</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Confirmation -->
+<dialog id="confirm-modal" class="modal modal-sm" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+  <div class="modal-surface">
+    <div class="modal-head">
+      <div>
+        <h2 class="modal-title" id="confirm-title">Are you sure?</h2>
+      </div>
+      <button type="button" class="modal-close" data-close aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-message" id="confirm-message"></p>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-outline" id="confirm-cancel">Cancel</button>
+      <button type="button" class="btn btn-danger-solid" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============================== LOGIN ============================== -->
 <div id="login-overlay">
   <div class="login-card">
-    <h2>Librarian sign in</h2>
-    <form id="login-form" autocomplete="off">
-      <label>Username <input id="login-username" type="text" placeholder="admin" required></label>
-      <label>Password <input id="login-password" type="password" placeholder="Password" required></label>
-      <button type="submit" id="login-btn">Sign in</button>
-      <div id="login-error" role="alert"></div>
+    <div class="login-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </span>
+      <div class="brand-text">
+        <span class="brand-name">Library</span>
+        <span class="brand-sub">Staff console</span>
+      </div>
+    </div>
+
+    <h1>Welcome back</h1>
+    <p class="login-sub">Sign in to manage the catalog, circulation and member records.</p>
+
+    <form id="login-form" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="login-username">Username</label>
+        <input id="login-username" type="text" placeholder="admin" autocapitalize="none" spellcheck="false" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <div class="pw-wrap">
+          <input id="login-password" type="password" placeholder="Your password" required>
+          <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="login-error" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span></span>
+      </div>
+      <button type="submit" id="login-btn" class="btn btn-primary btn-block">Sign in</button>
     </form>
-    <p class="hint">Default account: <code>admin</code> / <code>admin123</code></p>
+
+    <p class="login-hint">Demo account: <code>admin</code> / <code>admin123</code> &nbsp;·&nbsp; <code>librarian</code> / <code>librarian123</code></p>
   </div>
 </div>
+
+<!-- ============================== TOASTS ============================== -->
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
 
 <script>
 (function () {
   'use strict';
+
   var state = { token: null, librarian: null };
   var activeTab = 'dashboard';
 
-  // ---------------------------------------------------------- session -------
-  function persist() { sessionStorage.setItem('lib.token', state.token); sessionStorage.setItem('lib.librarian', JSON.stringify(state.librarian)); }
-  function restore() { var t = sessionStorage.getItem('lib.token'); var l = sessionStorage.getItem('lib.librarian'); if (t && l) { state.token = t; state.librarian = JSON.parse(l); } }
-  function clearSession() { state.token = null; state.librarian = null; sessionStorage.removeItem('lib.token'); sessionStorage.removeItem('lib.librarian'); }
+  /* ---------------------------------------------------------- helpers ------- */
+  function field(id) { return document.getElementById(id); }
+  function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function filled(v) { return v !== null && v !== undefined && String(v).trim() !== ''; }
+  function initials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    var out = parts[0].charAt(0);
+    if (parts.length > 1) out += parts[parts.length - 1].charAt(0);
+    return out.toUpperCase();
+  }
 
-  function esc(v) { if (v === null || v === undefined) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  var ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    lend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>',
+    undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>',
+    userCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>'
+  };
+
+  /* ---------------------------------------------------------- session ------- */
+  function persist() {
+    sessionStorage.setItem('lib.token', state.token);
+    sessionStorage.setItem('lib.librarian', JSON.stringify(state.librarian));
+  }
+  function restore() {
+    var t = sessionStorage.getItem('lib.token');
+    var l = sessionStorage.getItem('lib.librarian');
+    if (t && l) { state.token = t; state.librarian = JSON.parse(l); }
+  }
+  function clearSession() {
+    state.token = null; state.librarian = null;
+    sessionStorage.removeItem('lib.token');
+    sessionStorage.removeItem('lib.librarian');
+  }
 
   async function api(path, opts) {
     opts = opts || {};
     opts.headers = Object.assign({}, opts.headers);
     if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
     var res = await fetch(path, opts);
-    if (res.status === 401) { clearSession(); showLogin('Your session has expired. Please sign in again.'); throw new Error('Not authenticated'); }
+    if (res.status === 401) {
+      clearSession();
+      showLogin('Your session has expired. Please sign in again.');
+      renderWho();
+      throw new Error('Not authenticated');
+    }
     return res;
   }
   async function json(res) { return res.json().catch(function () { return {}; }); }
 
-  var msgEl = document.getElementById('message'); var msgTimer = null;
-  function showMessage(text, isError) { msgEl.textContent = text; msgEl.className = isError ? 'error' : 'ok'; if (msgTimer) clearTimeout(msgTimer); msgTimer = setTimeout(function () { msgEl.textContent = ''; msgEl.className = ''; }, 6000); }
+  /** Reports unexpected loader errors — but stays quiet after a session drop. */
+  function reportError(err) {
+    if (err && state.token) toast(err.message || 'Something went wrong.', 'error');
+  }
 
-  // ------------------------------------------------------------- login -------
-  var overlay = document.getElementById('login-overlay');
-  var loginForm = document.getElementById('login-form');
-  var loginError = document.getElementById('login-error');
-  function showLogin(m) { loginError.textContent = m || ''; overlay.hidden = false; }
-  function hideLogin() { loginError.textContent = ''; overlay.hidden = true; }
+  /* ----------------------------------------------------------- toasts ------- */
+  var toastHost = field('toasts');
+  function toast(message, type) {
+    type = type || 'success';
+    var el = document.createElement('div');
+    el.className = 'toast toast-' + (type === 'error' ? 'error' : type === 'info' ? 'info' : 'success');
+    el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    el.innerHTML =
+      '<span class="toast-icon">' + (type === 'error' ? ICON.alert : type === 'info' ? ICON.info : ICON.check) + '</span>' +
+      '<span class="toast-msg"></span>' +
+      '<button type="button" class="toast-close" aria-label="Dismiss notification">' + ICON.x + '</button>';
+    el.querySelector('.toast-msg').textContent = String(message === undefined ? '' : message);
+
+    var timer = null;
+    function dismiss() {
+      if (timer) clearTimeout(timer);
+      el.classList.add('toast-out');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+    }
+    timer = setTimeout(dismiss, type === 'error' ? 7000 : 4200);
+    el.querySelector('.toast-close').addEventListener('click', dismiss);
+
+    toastHost.appendChild(el);
+    while (toastHost.children.length > 4) toastHost.removeChild(toastHost.firstChild);
+  }
+
+  /* ----------------------------------------------------------- modals ------- */
+  function openModal(dlg) {
+    if (typeof dlg.showModal === 'function') { if (!dlg.open) dlg.showModal(); }
+    else dlg.setAttribute('open', '');
+  }
+  function closeModal(dlg) {
+    if (typeof dlg.close === 'function' && dlg.open) dlg.close();
+    else dlg.removeAttribute('open');
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('dialog.modal'), function (dlg) {
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) closeModal(dlg); });
+    Array.prototype.forEach.call(dlg.querySelectorAll('[data-close]'), function (btn) {
+      btn.addEventListener('click', function () { closeModal(dlg); });
+    });
+  });
+
+  var confirmModal = field('confirm-modal');
+  function confirmAction(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      field('confirm-title').textContent = opts.title || 'Are you sure?';
+      field('confirm-message').textContent = opts.message || '';
+      var okBtn = field('confirm-ok');
+      var cancelBtn = field('confirm-cancel');
+      okBtn.textContent = opts.confirmLabel || 'Confirm';
+      okBtn.className = 'btn ' + (opts.danger ? 'btn-danger-solid' : 'btn-primary');
+
+      function done(value) {
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        confirmModal.removeEventListener('close', onClose);
+        closeModal(confirmModal);
+        resolve(value);
+      }
+      function onOk() { done(true); }
+      function onCancel() { done(false); }
+      function onClose() { done(false); }
+
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      confirmModal.addEventListener('close', onClose);
+      openModal(confirmModal);
+      okBtn.focus();
+    });
+  }
+
+  /* --------------------------------------------------------- validation ----- */
+  function setError(id, message) {
+    var input = field(id);
+    if (!input) return;
+    var wrap = input.closest('.field');
+    if (!wrap) return;
+    var slot = wrap.querySelector('.field-error');
+    if (message) {
+      wrap.classList.add('invalid');
+      input.setAttribute('aria-invalid', 'true');
+      if (slot) slot.textContent = message;
+    } else {
+      wrap.classList.remove('invalid');
+      input.removeAttribute('aria-invalid');
+      if (slot) slot.textContent = '';
+    }
+  }
+  function clearErrors(ids) { ids.forEach(function (id) { setError(id, ''); }); }
+  function focusFirstInvalid(ids) {
+    for (var i = 0; i < ids.length; i++) {
+      var el = field(ids[i]);
+      if (el && el.closest('.field') && el.closest('.field').classList.contains('invalid')) { el.focus(); return; }
+    }
+  }
+  function showFormError(id, message) {
+    var box = field(id);
+    if (!box) return;
+    if (message) { box.querySelector('span').textContent = message; box.classList.add('show'); }
+    else { box.querySelector('span').textContent = ''; box.classList.remove('show'); }
+  }
+
+  var BOOK_FIELDS = ['b-title', 'b-author', 'b-isbn', 'b-year', 'b-genre', 'b-copies', 'b-condition'];
+  function validateBook() {
+    clearErrors(BOOK_FIELDS);
+    var ok = true;
+    var title = field('b-title').value.trim();
+    var author = field('b-author').value.trim();
+    var isbn = field('b-isbn').value.trim();
+    var year = field('b-year').value.trim();
+    var genre = field('b-genre').value.trim();
+    var copies = field('b-copies').value.trim();
+    var maxYear = new Date().getFullYear() + 1;
+
+    if (!title) { setError('b-title', 'Title is required.'); ok = false; }
+    else if (title.length > 200) { setError('b-title', 'Keep the title to 200 characters or fewer.'); ok = false; }
+
+    if (!author) { setError('b-author', 'Author is required.'); ok = false; }
+    else if (author.length > 100) { setError('b-author', 'Keep the author to 100 characters or fewer.'); ok = false; }
+
+    if (isbn) {
+      var digits = isbn.replace(/-/g, '');
+      if (!/^\d{10}$/.test(digits) && !/^\d{13}$/.test(digits)) {
+        setError('b-isbn', 'ISBN must be 10 or 13 digits (hyphens allowed).'); ok = false;
+      }
+    }
+    if (year) {
+      var y = Number(year);
+      if (!/^\d{4}$/.test(year) || isNaN(y) || y < 1450 || y > maxYear) {
+        setError('b-year', 'Enter a year between 1450 and ' + maxYear + '.'); ok = false;
+      }
+    }
+    if (genre && genre.length > 50) { setError('b-genre', 'Genre must be 50 characters or fewer.'); ok = false; }
+    if (!/^\d+$/.test(copies) || Number(copies) < 1) { setError('b-copies', 'Total copies must be at least 1.'); ok = false; }
+
+    if (!ok) focusFirstInvalid(BOOK_FIELDS);
+    return ok;
+  }
+
+  var MEMBER_FIELDS = ['m-name', 'm-email', 'm-phone'];
+  function validateMember() {
+    clearErrors(MEMBER_FIELDS);
+    var ok = true;
+    var name = field('m-name').value.trim();
+    var email = field('m-email').value.trim();
+    var phone = field('m-phone').value.trim();
+
+    if (!name) { setError('m-name', 'Name is required.'); ok = false; }
+    else if (name.length > 100) { setError('m-name', 'Name must be 100 characters or fewer.'); ok = false; }
+
+    if (email) {
+      if (email.length > 120) { setError('m-email', 'Email must be 120 characters or fewer.'); ok = false; }
+      else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setError('m-email', 'Enter a valid email address.'); ok = false; }
+    }
+    if (phone && phone.length > 30) { setError('m-phone', 'Phone must be 30 characters or fewer.'); ok = false; }
+
+    if (!ok) focusFirstInvalid(MEMBER_FIELDS);
+    return ok;
+  }
+
+  /* ------------------------------------------------------------- login ------- */
+  var overlay = field('login-overlay');
+  var loginForm = field('login-form');
+  var loginError = field('login-error');
+  var loginBtn = field('login-btn');
+
+  function showLogin(message) {
+    loginError.querySelector('span').textContent = message || '';
+    loginError.classList.toggle('show', !!message);
+    overlay.hidden = false;
+    setTimeout(function () { var u = field('login-username'); if (u && !u.value) u.focus(); }, 40);
+  }
+  function hideLogin() { loginError.classList.remove('show'); overlay.hidden = true; }
+
+  field('pw-toggle').addEventListener('click', function () {
+    var pw = field('login-password');
+    var showing = pw.type === 'text';
+    pw.type = showing ? 'password' : 'text';
+    this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    this.innerHTML = showing
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  });
 
   loginForm.addEventListener('submit', async function (e) {
-    e.preventDefault(); loginError.textContent = '';
-    var u = document.getElementById('login-username').value.trim();
-    var p = document.getElementById('login-password').value;
+    e.preventDefault();
+    loginError.classList.remove('show');
+    var u = field('login-username').value.trim();
+    var p = field('login-password').value;
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<span class="spin" aria-hidden="true"></span> Signing in…';
     try {
-      var res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) });
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+      });
       var data = await json(res);
-      if (!res.ok) { loginError.textContent = data.error || ('HTTP ' + res.status); return; }
-      state.token = data.token; state.librarian = data.librarian; persist(); loginForm.reset(); hideLogin();
+      if (!res.ok) { showLogin(data.error || ('HTTP ' + res.status)); return; }
+      state.token = data.token;
+      state.librarian = data.librarian;
+      persist();
+      loginForm.reset();
+      hideLogin();
       afterLogin();
-    } catch (err) { loginError.textContent = 'Sign-in failed: ' + err.message; }
+    } catch (err) {
+      showLogin('Sign-in failed: ' + (err.message || 'network error'));
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+    }
   });
 
   function renderWho() {
-    var who = document.getElementById('who');
-    if (state.librarian) { who.hidden = false; document.getElementById('who-name').textContent = state.librarian.fullName || state.librarian.username; document.getElementById('who-role').textContent = state.librarian.role ? '(' + state.librarian.role + ')' : ''; }
-    else who.hidden = true;
+    var who = field('who');
+    if (state.librarian) {
+      who.hidden = false;
+      var display = state.librarian.fullName || state.librarian.username || 'Librarian';
+      field('who-name').textContent = display;
+      field('who-avatar').textContent = initials(display);
+      field('who-role').textContent = state.librarian.role || 'LIBRARIAN';
+    } else {
+      who.hidden = true;
+    }
   }
-  document.getElementById('logout').addEventListener('click', async function () {
+
+  field('logout').addEventListener('click', async function () {
     try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
-    clearSession(); renderWho(); showLogin('Signed out.');
+    clearSession();
+    renderWho();
+    toast('Signed out. See you next shift!', 'info');
+    showLogin('Signed out.');
   });
 
-  // --------------------------------------------------------------- tabs ------
-  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
-  var panels = { dashboard: 'panel-dashboard', books: 'panel-books', members: 'panel-members', circulation: 'panel-circulation', logs: 'panel-logs' };
-  tabs.forEach(function (b) { b.addEventListener('click', function () { activateTab(b.dataset.tab); }); });
+  /* --------------------------------------------------------------- tabs ----- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabs .tab'));
+  var panels = {
+    dashboard: 'panel-dashboard',
+    books: 'panel-books',
+    members: 'panel-members',
+    circulation: 'panel-circulation',
+    logs: 'panel-logs'
+  };
+
+  tabs.forEach(function (btn, i) {
+    btn.addEventListener('click', function () { activateTab(btn.dataset.tab); });
+    btn.addEventListener('keydown', function (e) {
+      var next = null;
+      if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next === null) return;
+      e.preventDefault();
+      tabs[next].focus();
+      activateTab(tabs[next].dataset.tab);
+    });
+  });
+
   function activateTab(name) {
     activeTab = name;
-    tabs.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
-    Object.keys(panels).forEach(function (k) { document.getElementById(panels[k]).hidden = (k !== name); });
+    tabs.forEach(function (b) {
+      var active = b.dataset.tab === name;
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+      b.tabIndex = active ? 0 : -1;
+      if (active && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    Object.keys(panels).forEach(function (k) { field(panels[k]).hidden = (k !== name); });
+
     if (name === 'dashboard') loadDashboard();
     else if (name === 'books') loadBooks();
     else if (name === 'members') loadMembers();
@@ -292,246 +1628,782 @@
     else if (name === 'logs') loadLogs();
   }
 
-  // ----------------------------------------------------------- dashboard -----
+  /* --------------------------------------------------------- table utils ----- */
+  function skeletonRows(tbody, cols, rows) {
+    if (tbody.children.length) return;
+    var html = '';
+    for (var r = 0; r < (rows || 4); r++) {
+      html += '<tr class="skel-row">';
+      for (var c = 0; c < cols; c++) {
+        html += '<td><span class="skel" style="width:' + (52 + ((r + c) % 4) * 13) + '%"></span></td>';
+      }
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+  function emptyRow(cols, message) {
+    return '<tr><td colspan="' + cols + '" class="cell-empty"><div class="empty">' +
+      ICON.inbox + '<span>' + esc(message) + '</span></div></td></tr>';
+  }
+  function fmtTime(ts) {
+    return String(ts || '').replace(/\.\d+$/, '').replace('T', ' ');
+  }
+  function actionPill(action) {
+    var a = String(action || 'UNKNOWN');
+    var group = 'indigo';
+    if (a === 'LOGIN' || a === 'LOGOUT' || a === 'ISSUE_BOOK' || a === 'RETURN_BOOK') group = 'green';
+    else if (a === 'DELETE_BOOK' || a === 'FAILED_LOGIN' || a === 'DEACTIVATE_MEMBER') group = 'red';
+    else if (a === 'ADD_MEMBER' || a === 'UPDATE_MEMBER') group = 'sky';
+    else if (a === 'UPDATE_CONDITION') group = 'amber';
+    return '<span class="pill pill-' + group + '">' + esc(a) + '</span>';
+  }
+  function statusBadge(status) {
+    if (status === 'ISSUED') return '<span class="badge badge-amber">Issued</span>';
+    if (status === 'RETURNED') return '<span class="badge badge-green">Returned</span>';
+    return '<span class="badge badge-slate">' + esc(status) + '</span>';
+  }
+
+  /* ----------------------------------------------------------- dashboard ----- */
   var todayISO = new Date().toISOString().slice(0, 10);
-  function daysLate(due) { if (!due) return 0; var d = Math.floor((Date.parse(todayISO) - Date.parse(due)) / 86400000); return d > 0 ? d : 0; }
+  function daysLate(due) {
+    if (!due) return 0;
+    var d = Math.floor((Date.parse(todayISO) - Date.parse(due)) / 86400000);
+    return d > 0 ? d : 0;
+  }
 
   async function loadDashboard() {
-    var s = await json(await api('/api/dashboard'));
-    if (s.error) { showMessage(s.error, true); return; }
-    document.getElementById('w-total').textContent = s.totalBooks;
-    document.getElementById('w-issued').textContent = s.issuedNow;
-    document.getElementById('w-overdue').textContent = s.overdue;
-    document.getElementById('w-members').textContent = s.activeMembers;
-    document.getElementById('w-available').textContent = s.availableNow;
+    skeletonRows(document.querySelector('#dash-overdue tbody'), 4, 3);
+    try {
+      var s = await json(await api('/api/dashboard'));
+      if (s.error) { toast(s.error, 'error'); return; }
+      field('w-total').textContent = s.totalBooks;
+      field('w-issued').textContent = s.issuedNow;
+      field('w-overdue').textContent = s.overdue;
+      field('w-members').textContent = s.activeMembers;
+      field('w-available').textContent = s.availableNow;
 
-    var issues = await json(await api('/api/issues'));
-    var tb = document.querySelector('#dash-overdue tbody'); tb.innerHTML = '';
-    var overdue = (issues || []).filter(function (r) { return r.status === 'ISSUED' && daysLate(r.dueDate) > 0; });
-    if (overdue.length === 0) { tb.innerHTML = '<tr><td class="empty" colspan="4">No overdue transactions.</td></tr>'; return; }
-    overdue.forEach(function (r) {
-      var tr = document.createElement('tr'); tr.className = 'overdue';
-      tr.innerHTML = '<td>' + esc(r.memberName) + '</td><td>' + esc(r.bookTitle) + '</td><td>' + esc(r.dueDate) + '</td><td>' + daysLate(r.dueDate) + '</td>';
-      tb.appendChild(tr);
+      var issues = await json(await api('/api/issues'));
+      var overdue = (issues || []).filter(function (r) {
+        return r.status === 'ISSUED' && daysLate(r.dueDate) > 0;
+      });
+      field('overdue-count').textContent = String(overdue.length);
+
+      var tb = document.querySelector('#dash-overdue tbody');
+      if (!overdue.length) {
+        tb.innerHTML = emptyRow(4, 'Nothing overdue — every loan is on time.');
+      } else {
+        tb.innerHTML = '';
+        overdue.forEach(function (r) {
+          var tr = document.createElement('tr');
+          tr.className = 'row-overdue';
+          tr.innerHTML = '<td class="cell-strong">' + esc(r.memberName) + '</td>' +
+            '<td>' + esc(r.bookTitle) + '</td>' +
+            '<td class="mono">' + esc(r.dueDate) + '</td>' +
+            '<td><span class="badge badge-red">' + daysLate(r.dueDate) + ' days</span></td>';
+          tb.appendChild(tr);
+        });
+      }
+
+      var logs = await json(await api('/api/logs'));
+      renderFeed((logs || []).slice(0, 6));
+    } catch (err) { reportError(err); }
+  }
+
+  function renderFeed(logs) {
+    var feed = field('dash-feed');
+    if (!logs || !logs.length) {
+      feed.innerHTML = '<li><div class="empty" style="width:100%">' + ICON.clock +
+        '<span>No activity recorded yet.</span></div></li>';
+      return;
+    }
+    feed.innerHTML = '';
+    logs.forEach(function (l) {
+      var li = document.createElement('li');
+      li.innerHTML = '<div class="feed-body">' +
+        '<div class="feed-top">' + actionPill(l.action) +
+        '<span class="feed-who">' + esc(l.librarianName || 'System') + '</span></div>' +
+        '<div class="feed-sub">' + esc(l.details || '—') +
+        ' <span class="feed-time">· ' + esc(fmtTime(l.timestamp)) + '</span></div>' +
+        '</div>';
+      feed.appendChild(li);
     });
   }
 
-  // --------------------------------------------------------------- books -----
-  var bForm = document.getElementById('book-form');
-  var booksTbody = document.querySelector('#books tbody');
+  /* --------------------------------------------------------------- books ----- */
   var books = [];
-  function field(id) { return document.getElementById(id); }
+  var booksVisible = [];
+  var booksTbody = document.querySelector('#books tbody');
+  var pendingIssueBookId = null;
+
+  function bookQuery() {
+    var q = [];
+    [['s-title', 'title'], ['s-author', 'author'], ['s-genre', 'genre'], ['s-isbn', 'isbn']]
+      .forEach(function (pair) {
+        var v = field(pair[0]).value.trim();
+        if (v) q.push(pair[1] + '=' + encodeURIComponent(v));
+      });
+    return q.length ? '?' + q.join('&') : '';
+  }
 
   async function loadBooks() {
-    var q = [];
-    [['s-title','title'],['s-author','author'],['s-genre','genre'],['s-isbn','isbn']].forEach(function (pair) {
-      var v = field(pair[0]).value.trim(); if (v) q.push(pair[1] + '=' + encodeURIComponent(v));
-    });
-    books = await json(await api('/api/books' + (q.length ? '?' + q.join('&') : '')));
-    renderBooks();
+    skeletonRows(booksTbody, 8, 5);
+    try {
+      books = await json(await api('/api/books' + bookQuery()));
+      if (!Array.isArray(books)) books = [];
+      populateGenreFilter();
+      renderBooks();
+    } catch (err) { reportError(err); }
   }
+
+  function populateGenreFilter() {
+    var sel = field('f-genre');
+    var current = sel.value;
+    var seen = {};
+    books.forEach(function (b) { var g = String(b.genre || '').trim(); if (g) seen[g] = 1; });
+    var genres = Object.keys(seen).sort();
+    sel.innerHTML = '<option value="">All genres</option>';
+    genres.forEach(function (g) {
+      var o = document.createElement('option');
+      o.value = g; o.textContent = g;
+      sel.appendChild(o);
+    });
+    sel.value = genres.indexOf(current) >= 0 ? current : '';
+  }
+
+  function filterBooks() {
+    var q = field('q-books').value.trim().toLowerCase();
+    var genre = field('f-genre').value;
+    var cond = field('f-condition').value;
+    return books.filter(function (b) {
+      if (genre && String(b.genre || '') !== genre) return false;
+      if (cond && String(b.condition || '') !== cond) return false;
+      if (!q) return true;
+      return [b.title, b.author, b.isbn, b.genre].some(function (v) {
+        return String(v || '').toLowerCase().indexOf(q) >= 0;
+      });
+    });
+  }
+
   function renderBooks() {
+    booksVisible = filterBooks();
+
+    var q = field('q-books').value.trim();
+    var anyFilter = !!q || !!field('f-genre').value || !!field('f-condition').value || !!bookQuery();
+    field('btn-clear-filters').hidden = !anyFilter;
+    field('f-genre').classList.toggle('is-active', !!field('f-genre').value);
+    field('f-condition').classList.toggle('is-active', !!field('f-condition').value);
+    field('books-count').textContent = anyFilter
+      ? booksVisible.length + ' of ' + books.length
+      : String(books.length);
+
+    if (!booksVisible.length) {
+      booksTbody.innerHTML = emptyRow(8, books.length ? 'No books match your search.' : 'Your catalog is empty — add the first book.');
+      return;
+    }
+
     booksTbody.innerHTML = '';
-    if (!books || books.length === 0) { booksTbody.innerHTML = '<tr><td class="empty" colspan="8">No books match.</td></tr>'; return; }
-    books.forEach(function (b, i) {
+    booksVisible.forEach(function (b, i) {
       var tr = document.createElement('tr');
+      var total = Number(b.totalCopies) || 0;
+      var avail = Number(b.availableCopies) || 0;
+      var pct = total > 0 ? Math.round((avail / total) * 100) : 0;
+      var fillClass = avail === 0 ? ' is-zero' : (pct < 40 ? ' low' : '');
+
+      var condOptions = ['Available', 'Damaged', 'Lost'].map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === b.condition ? ' selected' : '') + '>' + esc(c) + '</option>';
+      }).join('');
+
       tr.innerHTML =
-        '<td>' + esc(b.title) + '</td><td>' + esc(b.author) + '</td><td>' + esc(b.isbn) + '</td>' +
-        '<td>' + esc(b.publishYear) + '</td><td>' + esc(b.genre) + '</td>' +
-        '<td><span class="cond-' + esc(b.condition) + '">' + esc(b.condition) + '</span></td>' +
-        '<td>' + b.availableCopies + '/' + b.totalCopies + '</td>' +
-        '<td class="actions">' +
-          '<button type="button" class="ghost small edit" data-index="' + i + '">Edit</button> ' +
-          '<button type="button" class="danger small del" data-index="' + i + '">Delete</button>' +
-        '</td>';
-      // condition selector
-      var td = tr.querySelector('td.actions');
-      var sel = document.createElement('select');
-      sel.className = 'cond small'; sel.dataset.id = b.id;
-      ['Available','Damaged','Lost'].forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; if (c === b.condition) o.selected = true; sel.appendChild(o); });
-      var wrap = document.createElement('div'); wrap.style.marginTop = '4px'; wrap.appendChild(sel); td.appendChild(wrap);
+        '<td><span class="cell-strong cell-title" title="' + esc(b.title) + '">' + esc(b.title) + '</span></td>' +
+        '<td>' + esc(b.author) + '</td>' +
+        '<td class="mono">' + (filled(b.isbn) ? esc(b.isbn) : '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (b.publishYear ? esc(b.publishYear) : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (filled(b.genre) ? '<span class="tag">' + esc(b.genre) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+        '<td><select class="cond-select cond-' + esc(b.condition || 'Available') + '" data-id="' + esc(b.id) + '" ' +
+          'aria-label="Condition for ' + esc(b.title) + '">' + condOptions + '</select></td>' +
+        '<td><div class="stock"><span class="stock-num">' + avail + ' / ' + total + '</span>' +
+          '<span class="stock-bar"><span class="stock-fill' + fillClass + '" style="width:' + pct + '%"></span></span></div></td>' +
+        '<td class="actions-cell"><div class="row-actions">' +
+          '<button type="button" class="btn btn-sm btn-soft" data-issue="' + i + '">Issue</button>' +
+          '<button type="button" class="btn btn-sm btn-outline" data-edit="' + i + '">Edit</button>' +
+          '<button type="button" class="btn btn-sm btn-danger-ghost" data-del="' + i + '">Delete</button>' +
+        '</div></td>';
       booksTbody.appendChild(tr);
     });
   }
+
   booksTbody.addEventListener('change', async function (e) {
-    if (!e.target.classList.contains('cond')) return;
-    var id = e.target.dataset.id; var cond = e.target.value;
+    var sel = e.target;
+    if (!sel.classList || !sel.classList.contains('cond-select')) return;
+    var id = sel.dataset.id;
+    var cond = sel.value;
+    sel.className = 'cond-select cond-' + cond;
     try {
-      var res = await api('/api/books/' + id + '/condition', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ condition: cond }) });
+      var res = await api('/api/books/' + id + '/condition', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ condition: cond })
+      });
       var data = await json(res);
-      if (!res.ok) { showMessage(data.error || 'Failed', true); await loadBooks(); return; }
-      showMessage('Condition set to ' + cond + '.'); await loadBooks();
-    } catch (err) { showMessage(err.message, true); }
+      if (!res.ok) { toast(data.error || 'Failed to update condition.', 'error'); await loadBooks(); return; }
+      toast('Condition set to ' + cond + '.');
+      await loadBooks();
+    } catch (err) { reportError(err); }
   });
+
   booksTbody.addEventListener('click', async function (e) {
-    var idx = e.target.dataset ? e.target.dataset.index : undefined; if (idx === undefined) return;
-    var b = books[Number(idx)]; if (!b) return;
-    if (e.target.classList.contains('edit')) {
-      field('b-id').value = b.id; field('b-title').value = b.title || ''; field('b-author').value = b.author || '';
-      field('b-isbn').value = b.isbn || ''; field('b-year').value = b.publishYear || ''; field('b-genre').value = b.genre || ''; field('b-copies').value = b.totalCopies || 1;
-      showMessage('Editing #' + b.id + ' - update the fields and press Save.'); field('b-title').focus();
-    } else if (e.target.classList.contains('del')) {
-      if (!window.confirm('Delete "' + (b.title || '') + '" (id ' + b.id + ')?')) return;
-      var res = await api('/api/books/' + b.id, { method: 'DELETE' }); var data = await json(res);
-      if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
-      showMessage(data.message || 'Deleted.'); await loadBooks();
+    var btn = e.target.closest ? e.target.closest('button') : null;
+    if (!btn) return;
+    var idx = btn.dataset ? btn.dataset.edit : undefined;
+    if (btn.dataset.del !== undefined) idx = btn.dataset.del;
+    if (btn.dataset.issue !== undefined) idx = btn.dataset.issue;
+    if (idx === undefined) return;
+
+    var b = booksVisible[Number(idx)];
+    if (!b) return;
+
+    if (btn.classList.contains('edit') || btn.dataset.edit !== undefined) {
+      openBookModal(b);
+    } else if (btn.dataset.del !== undefined) {
+      var ok = await confirmAction({
+        title: 'Delete this book?',
+        message: '“' + (b.title || '') + '” (id ' + b.id + ') will be removed from the catalog along with its stock record. This cannot be undone.',
+        confirmLabel: 'Delete book',
+        danger: true
+      });
+      if (!ok) return;
+      try {
+        var res = await api('/api/books/' + b.id, { method: 'DELETE' });
+        var data = await json(res);
+        if (!res.ok) { toast(data.error || 'Failed to delete the book.', 'error'); return; }
+        toast(data.message || 'Book deleted.');
+        await loadBooks();
+      } catch (err) { reportError(err); }
+    } else if (btn.dataset.issue !== undefined) {
+      pendingIssueBookId = b.id;
+      activateTab('circulation');
+      toast('Issuing “' + (b.title || '') + '” — pick a member to continue.', 'info');
     }
   });
-  bForm.addEventListener('submit', async function (e) {
+
+  /* book modal */
+  var bookModal = field('book-modal');
+  var bookForm = field('book-form');
+
+  function openBookModal(book) {
+    clearErrors(BOOK_FIELDS);
+    showFormError('book-form-error', '');
+    if (book) {
+      field('b-id').value = book.id;
+      field('b-title').value = book.title || '';
+      field('b-author').value = book.author || '';
+      field('b-isbn').value = book.isbn || '';
+      field('b-year').value = book.publishYear || '';
+      field('b-genre').value = book.genre || '';
+      field('b-copies').value = book.totalCopies || 1;
+      field('b-condition').value = book.condition || 'Available';
+      field('b-condition-field').hidden = false;
+      field('book-modal-title').textContent = 'Edit book';
+      field('book-modal-sub').textContent = 'Update catalog details for id ' + book.id + '.';
+      field('b-save').textContent = 'Save changes';
+    } else {
+      bookForm.reset();
+      field('b-id').value = '';
+      field('b-copies').value = 1;
+      field('b-condition').value = 'Available';
+      field('b-condition-field').hidden = true; /* stock condition only applies to existing rows */
+      field('book-modal-title').textContent = 'Add book';
+      field('book-modal-sub').textContent = 'Create a new catalog title and set its stock.';
+      field('b-save').textContent = 'Add book';
+    }
+    openModal(bookModal);
+    setTimeout(function () { field('b-title').focus(); }, 60);
+  }
+
+  field('btn-add-book').addEventListener('click', function () { openBookModal(null); });
+
+  bookForm.addEventListener('submit', async function (e) {
     e.preventDefault();
+    showFormError('book-form-error', '');
+    if (!validateBook()) return;
+
     var id = field('b-id').value.trim();
-    var payload = { title: field('b-title').value.trim(), author: field('b-author').value.trim(),
+    var payload = {
+      title: field('b-title').value.trim(),
+      author: field('b-author').value.trim(),
       isbn: field('b-isbn').value.trim() === '' ? null : field('b-isbn').value.trim(),
-      publishYear: Number(field('b-year').value.trim() || 0), genre: field('b-genre').value.trim() || null,
-      totalCopies: Number(field('b-copies').value || 1) };
+      publishYear: Number(field('b-year').value.trim() || 0),
+      genre: field('b-genre').value.trim() || null,
+      totalCopies: Number(field('b-copies').value || 1)
+    };
     var url = id === '' ? '/api/books' : '/api/books/' + id;
     var method = id === '' ? 'POST' : 'PUT';
-    var res = await api(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    var data = await json(res);
-    if (!res.ok) { showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true); return; }
-    showMessage(data.message || 'Saved.'); clearBookForm(); await loadBooks();
-  });
-  function clearBookForm() { field('b-id').value = ''; bForm.reset(); field('b-copies').value = 1; }
-  document.getElementById('b-clear').addEventListener('click', clearBookForm);
-  document.getElementById('btn-search').addEventListener('click', loadBooks);
-  document.getElementById('btn-search-clear').addEventListener('click', function () { ['s-title','s-author','s-genre','s-isbn'].forEach(function (id) { field(id).value = ''; }); loadBooks(); });
-  ['s-title','s-author','s-genre','s-isbn'].forEach(function (id) { field(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); loadBooks(); } }); });
 
-  document.getElementById('btn-export').addEventListener('click', async function () {
+    var saveBtn = field('b-save');
+    saveBtn.disabled = true;
+    try {
+      var res = await api(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      var data = await json(res);
+      if (!res.ok) { showFormError('book-form-error', 'Error ' + res.status + ': ' + (data.error || res.statusText)); return; }
+
+      var wasEdit = id !== '';
+      var nextCondition = field('b-condition').value;
+      var current = wasEdit ? books.find(function (x) { return String(x.id) === id; }) : null;
+
+      closeModal(bookModal);
+      toast(data.message || (wasEdit ? 'Book updated.' : 'Book added.'));
+
+      /* condition is owned by /api/books/{id}/condition — mirror it when changed */
+      if (current && nextCondition !== current.condition) {
+        await api('/api/books/' + id + '/condition', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ condition: nextCondition })
+        });
+      }
+      await loadBooks();
+    } catch (err) {
+      showFormError('book-form-error', err.message || 'Request failed.');
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  /* catalog toolbar */
+  function renderBooksLive() { renderBooks(); }
+  field('q-books').addEventListener('input', renderBooksLive);
+  field('f-genre').addEventListener('change', renderBooksLive);
+  field('f-condition').addEventListener('change', renderBooksLive);
+  field('btn-clear-filters').addEventListener('click', function () {
+    field('q-books').value = '';
+    field('f-genre').value = '';
+    field('f-condition').value = '';
+    ['s-title', 's-author', 's-genre', 's-isbn'].forEach(function (id) { field(id).value = ''; });
+    loadBooks();
+  });
+
+  field('btn-search').addEventListener('click', loadBooks);
+  field('btn-search-clear').addEventListener('click', function () {
+    ['s-title', 's-author', 's-genre', 's-isbn'].forEach(function (id) { field(id).value = ''; });
+    loadBooks();
+  });
+  ['s-title', 's-author', 's-genre', 's-isbn'].forEach(function (id) {
+    field(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); loadBooks(); }
+    });
+  });
+
+  field('btn-export').addEventListener('click', async function () {
     try {
       var res = await api('/api/books/export');
-      if (!res.ok) { showMessage('Export failed', true); return; }
-      var blob = await res.blob(); var url = URL.createObjectURL(blob);
-      var a = document.createElement('a'); a.href = url; a.download = 'books.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      showMessage('Exported books.csv');
-    } catch (err) { showMessage(err.message, true); }
+      if (!res.ok) { toast('Export failed.', 'error'); return; }
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'books.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast('Exported books.csv');
+    } catch (err) { reportError(err); }
   });
-  document.getElementById('csv-file').addEventListener('change', async function (e) {
-    var file = e.target.files[0]; if (!file) return;
+
+  field('csv-file').addEventListener('change', async function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
     var text = await file.text();
     try {
-      var res = await api('/api/books/import', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: text });
+      var res = await api('/api/books/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/csv' },
+        body: text
+      });
       var data = await json(res);
-      if (!res.ok) { showMessage(data.error || 'Import failed', true); return; }
-      showMessage('Import: ' + data.added + ' added, ' + data.skipped + ' skipped, ' + data.errors + ' errors.');
+      if (!res.ok) { toast(data.error || 'Import failed.', 'error'); return; }
+      toast('Import: ' + data.added + ' added, ' + data.skipped + ' skipped, ' + data.errors + ' errors.');
       await loadBooks();
-    } catch (err) { showMessage(err.message, true); }
+    } catch (err) { reportError(err); }
     e.target.value = '';
   });
 
-  // ------------------------------------------------------------ members ------
-  var mForm = document.getElementById('member-form');
-  var membersTbody = document.querySelector('#members tbody');
+  /* ------------------------------------------------------------- members ----- */
   var members = [];
-  async function loadMembers() { members = await json(await api('/api/members')); renderMembers(); }
+  var membersVisible = [];
+  var membersTbody = document.querySelector('#members tbody');
+  var memberModal = field('member-modal');
+  var memberForm = field('member-form');
+
+  async function loadMembers() {
+    skeletonRows(membersTbody, 5, 4);
+    try {
+      members = await json(await api('/api/members'));
+      if (!Array.isArray(members)) members = [];
+      renderMembers();
+    } catch (err) { reportError(err); }
+  }
+
   function renderMembers() {
+    var q = field('q-members').value.trim().toLowerCase();
+    var status = field('f-mstatus').value;
+    membersVisible = members.filter(function (m) {
+      if (status === 'active' && !m.activeStatus) return false;
+      if (status === 'inactive' && m.activeStatus) return false;
+      if (!q) return true;
+      return [m.name, m.email, m.phone].some(function (v) {
+        return String(v || '').toLowerCase().indexOf(q) >= 0;
+      });
+    });
+
+    var anyFilter = !!q || !!status;
+    field('f-mstatus').classList.toggle('is-active', !!status);
+    field('m-count').textContent = anyFilter
+      ? membersVisible.length + ' of ' + members.length
+      : String(members.length);
+
+    if (!membersVisible.length) {
+      membersTbody.innerHTML = emptyRow(5, members.length ? 'No members match your search.' : 'No members yet — add the first borrower.');
+      return;
+    }
+
     membersTbody.innerHTML = '';
-    if (!members || members.length === 0) { membersTbody.innerHTML = '<tr><td class="empty" colspan="5">No members yet.</td></tr>'; return; }
-    members.forEach(function (m, i) {
+    membersVisible.forEach(function (m, i) {
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + esc(m.name) + '</td><td>' + esc(m.email) + '</td><td>' + esc(m.phone) + '</td>' +
-        '<td>' + (m.activeStatus ? '<span class="status-returned">Active</span>' : '<span class="status-open">Inactive</span>') + '</td>' +
-        '<td class="actions"><button type="button" class="ghost small m-edit" data-index="' + i + '">Edit</button> ' +
-        '<button type="button" class="danger small m-del" data-index="' + i + '">' + (m.activeStatus ? 'Deactivate' : 'Delete') + '</button></td>';
+      tr.innerHTML =
+        '<td><div class="person"><span class="avatar avatar-sm" aria-hidden="true">' + esc(initials(m.name)) + '</span>' +
+          '<span class="cell-strong">' + esc(m.name) + '</span></div></td>' +
+        '<td>' + (filled(m.email) ? esc(m.email) : '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (filled(m.phone) ? esc(m.phone) : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (m.activeStatus
+          ? '<span class="badge badge-green">Active</span>'
+          : '<span class="badge badge-slate">Inactive</span>') + '</td>' +
+        '<td class="actions-cell"><div class="row-actions">' +
+          '<button type="button" class="btn btn-sm btn-outline" data-edit="' + i + '">Edit</button>' +
+          (m.activeStatus
+            ? '<button type="button" class="btn btn-sm btn-danger-ghost" data-deact="' + i + '">Deactivate</button>'
+            : '<button type="button" class="btn btn-sm btn-soft" data-restore="' + i + '">Restore</button>') +
+        '</div></td>';
       membersTbody.appendChild(tr);
     });
   }
+
   membersTbody.addEventListener('click', async function (e) {
-    var idx = e.target.dataset ? e.target.dataset.index : undefined; if (idx === undefined) return;
-    var m = members[Number(idx)]; if (!m) return;
-    if (e.target.classList.contains('m-edit')) {
-      field('m-id').value = m.id; field('m-name').value = m.name || ''; field('m-email').value = m.email || ''; field('m-phone').value = m.phone || '';
-      showMessage('Editing #' + m.id); field('m-name').focus();
-    } else if (e.target.classList.contains('m-del')) {
-      if (!window.confirm((m.activeStatus ? 'Deactivate' : 'Delete') + ' "' + m.name + '"?')) return;
-      var res = await api('/api/members/' + m.id, { method: 'DELETE' }); var data = await json(res);
-      if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
-      showMessage(data.message || 'Done.'); if (field('m-id').value === String(m.id)) clearMemberForm(); await loadMembers();
+    var btn = e.target.closest ? e.target.closest('button') : null;
+    if (!btn || btn.dataset.edit === undefined && btn.dataset.deact === undefined && btn.dataset.restore === undefined) return;
+    var m = membersVisible[Number(btn.dataset.edit !== undefined ? btn.dataset.edit : (btn.dataset.deact !== undefined ? btn.dataset.deact : btn.dataset.restore))];
+    if (!m) return;
+
+    if (btn.dataset.edit !== undefined) {
+      openMemberModal(m);
+      return;
     }
+
+    if (btn.dataset.deact !== undefined) {
+      var ok = await confirmAction({
+        title: 'Deactivate member?',
+        message: '“' + m.name + '” will no longer be able to borrow books. Their loan history is kept.',
+        confirmLabel: 'Deactivate',
+        danger: true
+      });
+      if (!ok) return;
+      try {
+        var res = await api('/api/members/' + m.id, { method: 'DELETE' });
+        var data = await json(res);
+        if (!res.ok) { toast(data.error || 'Failed to deactivate the member.', 'error'); return; }
+        toast(data.message || 'Member deactivated.');
+        if (field('m-id').value === String(m.id)) field('m-id').value = '';
+        await loadMembers();
+      } catch (err) { reportError(err); }
+      return;
+    }
+
+    /* restore: same PUT hook the edit form uses, with activeStatus switched on */
+    try {
+      var r = await api('/api/members/' + m.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: m.name, email: m.email || null, phone: m.phone || null, activeStatus: true })
+      });
+      var d = await json(r);
+      if (!r.ok) { toast(d.error || 'Failed to restore the member.', 'error'); return; }
+      toast('“' + m.name + '” is active again.');
+      await loadMembers();
+    } catch (err) { reportError(err); }
   });
-  mForm.addEventListener('submit', async function (e) {
+
+  function openMemberModal(member) {
+    clearErrors(MEMBER_FIELDS);
+    showFormError('member-form-error', '');
+    if (member) {
+      field('m-id').value = member.id;
+      field('m-name').value = member.name || '';
+      field('m-email').value = member.email || '';
+      field('m-phone').value = member.phone || '';
+      field('member-modal-title').textContent = 'Edit member';
+      field('member-modal-sub').textContent = 'Update the record for id ' + member.id + '.';
+      field('m-save').textContent = 'Save changes';
+    } else {
+      memberForm.reset();
+      field('m-id').value = '';
+      field('member-modal-title').textContent = 'Add member';
+      field('member-modal-sub').textContent = 'Register a borrower who can check out books.';
+      field('m-save').textContent = 'Add member';
+    }
+    openModal(memberModal);
+    setTimeout(function () { field('m-name').focus(); }, 60);
+  }
+
+  field('btn-add-member').addEventListener('click', function () { openMemberModal(null); });
+
+  memberForm.addEventListener('submit', async function (e) {
     e.preventDefault();
+    showFormError('member-form-error', '');
+    if (!validateMember()) return;
+
     var id = field('m-id').value.trim();
-    var payload = { name: field('m-name').value.trim(), email: field('m-email').value.trim() || null, phone: field('m-phone').value.trim() || null, activeStatus: true };
+    var payload = {
+      name: field('m-name').value.trim(),
+      email: field('m-email').value.trim() || null,
+      phone: field('m-phone').value.trim() || null,
+      activeStatus: true
+    };
     var url = id === '' ? '/api/members' : '/api/members/' + id;
     var method = id === '' ? 'POST' : 'PUT';
-    var res = await api(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    var data = await json(res);
-    if (!res.ok) { showMessage('Error ' + res.status + ': ' + (data.error || res.statusText), true); return; }
-    showMessage(data.message || 'Saved.'); clearMemberForm(); await loadMembers();
-  });
-  function clearMemberForm() { field('m-id').value = ''; mForm.reset(); }
-  document.getElementById('m-clear').addEventListener('click', clearMemberForm);
 
-  // -------------------------------------------------------- circulation ------
-  var issuesTbody = document.querySelector('#issues tbody');
+    var saveBtn = field('m-save');
+    saveBtn.disabled = true;
+    try {
+      var res = await api(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      var data = await json(res);
+      if (!res.ok) { showFormError('member-form-error', 'Error ' + res.status + ': ' + (data.error || res.statusText)); return; }
+      closeModal(memberModal);
+      toast(data.message || 'Member saved.');
+      await loadMembers();
+    } catch (err) {
+      showFormError('member-form-error', err.message || 'Request failed.');
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  field('q-members').addEventListener('input', renderMembers);
+  field('f-mstatus').addEventListener('change', renderMembers);
+
+  /* -------------------------------------------------------- circulation ------ */
   var issues = [];
+  var issuesVisible = [];
+  var issuesTbody = document.querySelector('#issues tbody');
+
   async function loadCirculation() {
-    issues = await json(await api('/api/issues'));
-    renderIssues();
-    await fillSelects();
+    skeletonRows(issuesTbody, 8, 4);
+    try {
+      issues = await json(await api('/api/issues'));
+      if (!Array.isArray(issues)) issues = [];
+      renderIssues();
+      await fillSelects();
+    } catch (err) { reportError(err); }
   }
+
   function renderIssues() {
-    issuesTbody.innerHTML = '';
-    if (!issues || issues.length === 0) { issuesTbody.innerHTML = '<tr><td class="empty" colspan="8">No circulation records.</td></tr>'; return; }
-    issues.forEach(function (r, i) {
+    var q = field('q-loans').value.trim().toLowerCase();
+    var status = field('f-loan').value;
+    issuesVisible = issues.filter(function (r) {
       var late = r.status === 'ISSUED' && daysLate(r.dueDate) > 0;
-      var tr = document.createElement('tr'); if (late) tr.className = 'overdue';
-      tr.innerHTML = '<td>' + esc(r.memberName) + '</td><td>' + esc(r.bookTitle) + '</td>' +
-        '<td>' + esc(r.issueDate) + '</td><td>' + esc(r.dueDate) + '</td><td>' + esc(r.returnDate || '–') + '</td>' +
-        '<td class="' + (r.status === 'ISSUED' ? 'status-open' : 'status-returned') + '">' + esc(r.status) + (late ? ' (OVERDUE)' : '') + '</td>' +
-        '<td>' + (r.fineAmount > 0 ? '$' + Number(r.fineAmount).toFixed(2) : '–') + '</td>' +
-        '<td class="actions">' + (r.status === 'ISSUED' ? '<button type="button" class="primary small ret" data-index="' + i + '">Return</button>' : '') + '</td>';
+      if (status === 'ISSUED' && !(r.status === 'ISSUED' && !late)) return false;
+      if (status === 'OVERDUE' && !late) return false;
+      if (status === 'RETURNED' && r.status !== 'RETURNED') return false;
+      if (!q) return true;
+      return [r.memberName, r.bookTitle].some(function (v) {
+        return String(v || '').toLowerCase().indexOf(q) >= 0;
+      });
+    });
+
+    var anyFilter = !!q || !!status;
+    field('f-loan').classList.toggle('is-active', !!status);
+    field('loan-count').textContent = anyFilter
+      ? issuesVisible.length + ' of ' + issues.length
+      : String(issues.length);
+
+    if (!issuesVisible.length) {
+      issuesTbody.innerHTML = emptyRow(8, issues.length ? 'No loans match your filters.' : 'No circulation records yet.');
+      return;
+    }
+
+    issuesTbody.innerHTML = '';
+    issuesVisible.forEach(function (r, i) {
+      var late = r.status === 'ISSUED' && daysLate(r.dueDate) > 0;
+      var tr = document.createElement('tr');
+      if (late) tr.className = 'row-overdue';
+      tr.innerHTML =
+        '<td><span class="cell-strong">' + esc(r.memberName) + '</span></td>' +
+        '<td>' + esc(r.bookTitle) + '</td>' +
+        '<td class="mono">' + esc(r.issueDate || '—') + '</td>' +
+        '<td class="mono">' + esc(r.dueDate || '—') + '</td>' +
+        '<td class="mono">' + (filled(r.returnDate) ? esc(r.returnDate) : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (late
+          ? '<span class="badge badge-red">Overdue · ' + daysLate(r.dueDate) + 'd</span>'
+          : statusBadge(r.status)) + '</td>' +
+        '<td>' + (Number(r.fineAmount) > 0 ? '<span class="fine">$' + Number(r.fineAmount).toFixed(2) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+        '<td class="actions-cell"><div class="row-actions">' +
+          (r.status === 'ISSUED'
+            ? '<button type="button" class="btn btn-sm btn-soft" data-return="' + i + '">' + ICON.undo + 'Return</button>'
+            : '<span class="muted" style="font-size:12.5px">Completed</span>') +
+        '</div></td>';
       issuesTbody.appendChild(tr);
     });
   }
+
   issuesTbody.addEventListener('click', async function (e) {
-    if (!e.target.classList.contains('ret')) return;
-    var idx = e.target.dataset.index; var r = issues[Number(idx)]; if (!r) return;
-    var res = await api('/api/issues/' + r.id + '/return', { method: 'POST' }); var data = await json(res);
-    if (!res.ok) { showMessage(data.error || 'Failed', true); return; }
-    var fine = data.record && data.record.fineAmount > 0 ? ' Fine $' + Number(data.record.fineAmount).toFixed(2) : '';
-    showMessage('Book returned.' + fine); await loadCirculation();
-  });
-  async function fillSelects() {
-    var bk = document.getElementById('i-book'); var mb = document.getElementById('i-member');
-    var booksAvail = await json(await api('/api/books'));
-    var mem = await json(await api('/api/members'));
-    bk.innerHTML = ''; mb.innerHTML = '';
-    (booksAvail || []).filter(function (b) { return b.availableCopies > 0; }).forEach(function (b) { var o = document.createElement('option'); o.value = b.id; o.textContent = b.title + ' (' + b.availableCopies + ' left)'; bk.appendChild(o); });
-    if (!bk.options.length) bk.innerHTML = '<option value="">No copies available</option>';
-    (mem || []).filter(function (m) { return m.activeStatus; }).forEach(function (m) { var o = document.createElement('option'); o.value = m.id; o.textContent = m.name; mb.appendChild(o); });
-    if (!mb.options.length) mb.innerHTML = '<option value="">No active members</option>';
-  }
-  document.getElementById('issue-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var bookId = Number(document.getElementById('i-book').value);
-    var memberId = Number(document.getElementById('i-member').value);
-    if (!bookId || !memberId) { showMessage('Select both a book and a member.', true); return; }
-    var res = await api('/api/issues', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId: bookId, memberId: memberId }) });
-    var data = await json(res);
-    if (!res.ok) { showMessage(data.error || 'Issue failed', true); return; }
-    showMessage('Book issued, due ' + (data.record ? data.record.dueDate : '') + '.'); await loadCirculation();
+    var btn = e.target.closest ? e.target.closest('[data-return]') : null;
+    if (!btn) return;
+    var r = issuesVisible[Number(btn.dataset.return)];
+    if (!r) return;
+    btn.disabled = true;
+    try {
+      var res = await api('/api/issues/' + r.id + '/return', { method: 'POST' });
+      var data = await json(res);
+      if (!res.ok) { toast(data.error || 'Failed to record the return.', 'error'); btn.disabled = false; return; }
+      var fine = data.record && Number(data.record.fineAmount) > 0
+        ? ' Fine $' + Number(data.record.fineAmount).toFixed(2) + '.'
+        : '';
+      toast('Book returned.' + fine);
+      await loadCirculation();
+    } catch (err) { reportError(err); btn.disabled = false; }
   });
 
-  // ----------------------------------------------------------- logs ----------
+  async function fillSelects() {
+    var bk = field('i-book');
+    var mb = field('i-member');
+    var booksAvail = await json(await api('/api/books'));
+    var mem = await json(await api('/api/members'));
+
+    bk.innerHTML = '';
+    mb.innerHTML = '';
+    (booksAvail || []).filter(function (b) { return b.availableCopies > 0; }).forEach(function (b) {
+      var o = document.createElement('option');
+      o.value = b.id;
+      o.textContent = b.title + ' (' + b.availableCopies + ' left)';
+      bk.appendChild(o);
+    });
+    if (!bk.options.length) bk.innerHTML = '<option value="">No copies available</option>';
+    else if (pendingIssueBookId !== null && bk.querySelector('option[value="' + pendingIssueBookId + '"]')) {
+      bk.value = String(pendingIssueBookId);
+    }
+    pendingIssueBookId = null;
+
+    (mem || []).filter(function (m) { return m.activeStatus; }).forEach(function (m) {
+      var o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.name;
+      mb.appendChild(o);
+    });
+    if (!mb.options.length) mb.innerHTML = '<option value="">No active members</option>';
+  }
+
+  field('issue-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var bookId = Number(field('i-book').value);
+    var memberId = Number(field('i-member').value);
+    if (!bookId || !memberId) { toast('Select both a book and a member.', 'error'); return; }
+    try {
+      var res = await api('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: bookId, memberId: memberId })
+      });
+      var data = await json(res);
+      if (!res.ok) { toast(data.error || 'Issue failed.', 'error'); return; }
+      toast('Book issued, due ' + (data.record ? data.record.dueDate : '') + '.');
+      await loadCirculation();
+    } catch (err) { reportError(err); }
+  });
+
+  field('q-loans').addEventListener('input', renderIssues);
+  field('f-loan').addEventListener('change', renderIssues);
+
+  /* --------------------------------------------------------------- logs ------ */
+  var logsData = [];
   var logsTbody = document.querySelector('#logs tbody');
+
   async function loadLogs() {
-    var logs = await json(await api('/api/logs'));
+    skeletonRows(logsTbody, 4, 6);
+    try {
+      logsData = await json(await api('/api/logs'));
+      if (!Array.isArray(logsData)) logsData = [];
+      populateActionFilter();
+      renderLogs();
+    } catch (err) { reportError(err); }
+  }
+
+  function populateActionFilter() {
+    var sel = field('f-action');
+    var current = sel.value;
+    var seen = {};
+    logsData.forEach(function (l) { if (l.action) seen[l.action] = 1; });
+    var actions = Object.keys(seen).sort();
+    sel.innerHTML = '<option value="">All actions</option>';
+    actions.forEach(function (a) {
+      var o = document.createElement('option');
+      o.value = a; o.textContent = a;
+      sel.appendChild(o);
+    });
+    sel.value = actions.indexOf(current) >= 0 ? current : '';
+  }
+
+  function renderLogs() {
+    var q = field('q-logs').value.trim().toLowerCase();
+    var action = field('f-action').value;
+    var visible = logsData.filter(function (l) {
+      if (action && String(l.action || '') !== action) return false;
+      if (!q) return true;
+      return [l.action, l.details, l.librarianName].some(function (v) {
+        return String(v || '').toLowerCase().indexOf(q) >= 0;
+      });
+    });
+
+    var anyFilter = !!q || !!action;
+    field('f-action').classList.toggle('is-active', !!action);
+    field('logs-count').textContent = anyFilter
+      ? visible.length + ' of ' + logsData.length
+      : String(logsData.length);
+
+    if (!visible.length) {
+      logsTbody.innerHTML = emptyRow(4, logsData.length ? 'No activity matches your filters.' : 'No activity yet.');
+      return;
+    }
+
     logsTbody.innerHTML = '';
-    if (!logs || logs.length === 0) { logsTbody.innerHTML = '<tr><td class="empty" colspan="4">No activity yet.</td></tr>'; return; }
-    logs.forEach(function (l) {
+    visible.forEach(function (l) {
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + esc(l.timestamp) + '</td><td>' + esc(l.librarianName) + '</td>' +
-        '<td><span class="pill ' + esc(l.action) + '">' + esc(l.action) + '</span></td><td>' + esc(l.details) + '</td>';
+      tr.innerHTML =
+        '<td class="mono nowrap">' + esc(fmtTime(l.timestamp)) + '</td>' +
+        '<td>' + (filled(l.librarianName) ? esc(l.librarianName) : '<span class="muted">System</span>') + '</td>' +
+        '<td>' + actionPill(l.action) + '</td>' +
+        '<td class="muted">' + esc(l.details || '—') + '</td>';
       logsTbody.appendChild(tr);
     });
   }
 
-  // ------------------------------------------------------------- boot --------
-  async function afterLogin() { renderWho(); activateTab('dashboard'); }
+  field('q-logs').addEventListener('input', renderLogs);
+  field('f-action').addEventListener('change', renderLogs);
+  field('logs-refresh').addEventListener('click', loadLogs);
+  field('dash-refresh').addEventListener('click', loadDashboard);
+
+  /* --------------------------------------------------------------- boot ------ */
+  async function afterLogin() {
+    renderWho();
+    activateTab('dashboard');
+  }
+
   restore();
-  if (state.token) { hideLogin(); afterLogin(); } else { renderWho(); showLogin(); }
+  if (state.token) { hideLogin(); afterLogin(); }
+  else { renderWho(); showLogin(); }
 })();
 </script>
 </body>
