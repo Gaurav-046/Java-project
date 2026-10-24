@@ -58,7 +58,7 @@ public class BookHandler implements HttpHandler {
         } catch (MethodNotAllowed e) {
             send(ex, 405, error("Method not allowed"));
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) {
+            if (DbErrors.duplicate(e)) {
                 send(ex, 409, error("A book with this ISBN already exists"));
             } else {
                 send(ex, DbErrors.status(e), error(e.getMessage()));

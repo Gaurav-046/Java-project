@@ -60,8 +60,8 @@ public class DashboardHandler implements HttpHandler {
                 (SELECT COALESCE(SUM(total_copies), 0) FROM books) AS total_books,
                 (SELECT COALESCE(SUM(available_copies), 0) FROM books) AS available_now,
                 (SELECT COUNT(*) FROM issue_records WHERE status = 'ISSUED') AS issued_now,
-                (SELECT COUNT(*) FROM issue_records WHERE status = 'ISSUED' AND due_date < CURDATE()) AS overdue,
-                (SELECT COUNT(*) FROM members WHERE active_status = 1) AS active_members
+                (SELECT COUNT(*) FROM issue_records WHERE status = 'ISSUED' AND due_date < CURRENT_DATE) AS overdue,
+                (SELECT COUNT(*) FROM members WHERE active_status = TRUE) AS active_members
             """;
 
     private void send(HttpExchange ex, int status, Object body) throws IOException {

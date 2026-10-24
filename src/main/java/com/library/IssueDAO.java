@@ -183,7 +183,7 @@ public class IssueDAO {
 
     private Book bookForIssue(Connection conn, int bookId) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, title, author, isbn, publish_year, genre, `condition`, total_copies, available_copies "
+                "SELECT id, title, author, isbn, publish_year, genre, \"condition\", total_copies, available_copies "
                         + "FROM books WHERE id = ?")) {
             ps.setInt(1, bookId);
             try (ResultSet rs = ps.executeQuery()) {

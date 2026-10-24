@@ -11,10 +11,10 @@ import java.util.List;
 public class BookDAO {
 
     private static final String COLUMNS =
-            "id, title, author, isbn, publish_year, genre, `condition`, total_copies, available_copies";
+            "id, title, author, isbn, publish_year, genre, \"condition\", total_copies, available_copies";
 
     public void create(Book b) throws SQLException {
-        String sql = "INSERT INTO books (title, author, isbn, publish_year, genre, `condition`, total_copies, available_copies) "
+        String sql = "INSERT INTO books (title, author, isbn, publish_year, genre, \"condition\", total_copies, available_copies) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -44,7 +44,7 @@ public class BookDAO {
      */
     public void update(Book b) throws SQLException {
         String sql = "UPDATE books SET title = ?, author = ?, isbn = ?, publish_year = ?, "
-                + "genre = ?, `condition` = ?, total_copies = ?, available_copies = ? WHERE id = ?";
+                + "genre = ?, \"condition\" = ?, total_copies = ?, available_copies = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, b, true);
@@ -54,7 +54,7 @@ public class BookDAO {
 
     /** Sets only the condition and available stock (used by the condition toggle). */
     public void updateStock(int id, String condition, int availableCopies) throws SQLException {
-        String sql = "UPDATE books SET `condition` = ?, available_copies = ? WHERE id = ?";
+        String sql = "UPDATE books SET \"condition\" = ?, available_copies = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, condition);

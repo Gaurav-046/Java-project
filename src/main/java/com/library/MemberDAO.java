@@ -68,7 +68,7 @@ public class MemberDAO {
      * circulation history (issue_records FK) stays intact.
      */
     public void deactivate(int id) throws SQLException {
-        String sql = "UPDATE members SET active_status = 0 WHERE id = ?";
+        String sql = "UPDATE members SET active_status = FALSE WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -78,7 +78,7 @@ public class MemberDAO {
 
     /** Members that count toward "active members" on the dashboard. */
     public int countActive() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM members WHERE active_status = 1";
+        String sql = "SELECT COUNT(*) FROM members WHERE active_status = TRUE";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
